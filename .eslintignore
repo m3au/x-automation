@@ -1,0 +1,5 @@
+# Ignore build output
+dist/
+node_modules/
+coverage/
+*.min.js

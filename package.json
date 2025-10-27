@@ -1,0 +1,64 @@
+{
+  "name": "x-automation",
+  "version": "1.0.0",
+  "description": "TypeScript utilities for X.com (Twitter) - browser console scripts for liking and unmuting",
+  "type": "module",
+  "main": "dist/like.js",
+  "types": "dist/like.d.ts",
+  "scripts": {
+    "build": "bun build src/like.ts --outdir dist --minify --target browser --format iife && bun build src/unmute.ts --outdir dist --minify --target browser --format iife",
+    "build:dev": "bun build src/like.ts --outdir dist --target browser --format iife && bun build src/unmute.ts --outdir dist --target browser --format iife",
+    "minify": "echo 'Minification now handled by bun build --minify'",
+    "watch": "chokidar 'src/**/*.ts' -c 'bun run build' --initial",
+    "clean": "rm -rf dist",
+    "rebuild": "bun run clean && bun run build",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "twitter",
+    "x.com",
+    "automation",
+    "browser-script",
+    "social-media",
+    "utilities",
+    "typescript"
+  ],
+  "author": {
+    "name": "m3au",
+    "url": "https://github.com/m3au"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "chokidar-cli": "^3.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-unicorn": "^51.0.1",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.2.5",
+    "terser": "^5.31.0",
+    "typescript": "^5.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m3au/starship",
+    "directory": "packages/x-automation"
+  },
+  "homepage": "https://github.com/m3au/starship/tree/main/packages/x-automation#readme",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "private": true
+}

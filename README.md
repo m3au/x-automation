@@ -1,98 +1,163 @@
-# X.com User Interaction Scripts
+# X.com Automation Utilities
 
-This folder contains scripts to automate interactions with X.com user profiles.
+TypeScript utilities for X.com (Twitter) browser console automation.
 
-## Option 1: Fully Automated Bash Script (Recommended)
+## ⚠️ Disclaimer
 
-The `auto_visit_users.sh` script uses Chrome's remote debugging protocol to automatically:
+These scripts are for personal use only. Use at your own risk and be aware of X.com's Terms of Service. Automated actions may result in account restrictions.
 
-1. Open user profiles in a browser
-2. Inject and run the liking JavaScript for each user
-3. Process all users in sequence without any manual copying/pasting
+## 📦 Scripts
 
-### Usage
+### Like Script (`like.ts`)
 
-1. Make the script executable:
+Advanced like automation with human-like behavior patterns:
+
+- **Natural delays** based on content type (text, images, videos)
+- **Human reading patterns** simulation
+- **Scroll behavior** with easing and occasional overshoots
+- **Automation detection** warnings
+- **Tab visibility detection** (pauses when inactive)
+- **Anti-detection features**
+
+**Usage in Browser Console:**
+
+1. Build the TypeScript:
 
    ```bash
-   chmod +x auto_visit_users.sh
+   npm run build
    ```
 
-2. Run the script:
+2. Copy the contents of `dist/like.js` and paste into X.com browser console
+
+3. Run with:
+
+   ```javascript
+   likeCurrentUserPosts(200); // Like up to 200 posts
+   ```
+
+**Available Commands:**
+
+- `likeCurrentUserPosts(limit)` - Start liking posts (default: 200)
+- `stop()` - Stop the script immediately
+- `resetState()` - Reset script state
+
+### Unmute Script (`unmute.ts`)
+
+Simple utility to unmute all muted accounts at once.
+
+**Usage in Browser Console:**
+
+1. Build the TypeScript:
 
    ```bash
-   ./auto_visit_users.sh
+   npm run build
    ```
 
-3. The script will:
-   - Start Chrome with remote debugging enabled
-   - Visit each user profile
-   - Automatically inject and run the liking script
-   - Wait for completion before moving to the next user
-   - Close Chrome when finished
+2. Navigate to your muted accounts page on X.com
 
-### Requirements
+3. Copy the contents of `dist/unmute.js` and paste into browser console
 
-- Google Chrome installed at the default location
-- curl (already installed on macOS)
+4. The script will automatically unmute all visible accounts
 
-## Option 2: Fully Automated Node.js Script
-
-The `auto_like_users.js` script uses Puppeteer to automate the entire process.
+## 🛠️ Development
 
 ### Installation
 
-1. Install Node.js dependencies:
+```bash
+npm install
+```
 
-   ```bash
-   npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth
-   ```
+### Build
 
-2. Run the script:
+```bash
+npm run build
+```
 
-   ```bash
-   node auto_like_users.js
-   ```
+### Type Checking
 
-3. When the browser opens:
-   - Log in to X.com manually
-   - The script will wait for your login, then automatically process each user
+```bash
+npm run typecheck
+```
 
-### Configuration
+### Linting
 
-You can modify these settings in the `config` object at the top of `auto_like_users.js`:
+```bash
+npm run lint
+npm run lint:fix
+```
 
-- `headless`: Set to `true` for background operation
-- `postsPerUser`: Number of posts to like per user
-- `minDelayBetweenLikes`/`maxDelayBetweenLikes`: Random delay range between likes (ms)
-- `minDelayBetweenUsers`/`maxDelayBetweenUsers`: Random delay range between users (ms)
+### Formatting
 
-## Option 3: Semi-Automated Bash Script
+```bash
+npm run format
+npm run format:check
+```
 
-The `visit_users.sh` script opens each user's profile in a browser and generates a per-user JavaScript file for you to paste into the console.
+### Clean Build
 
-### Usage
+```bash
+npm run clean
+npm run rebuild
+```
 
-1. Make the script executable:
+## 📁 Project Structure
 
-   ```bash
-   chmod +x visit_users.sh
-   ```
+```text
+x-automation/
+├── src/
+│   ├── like.ts      # Like automation script
+│   └── unmute.ts    # Unmute utility script
+├── dist/            # Compiled JavaScript output
+├── package.json
+├── tsconfig.json
+├── .eslintrc.json
+└── README.md
+```
 
-2. Run the script:
+## 🔧 Configuration
 
-   ```bash
-   ./visit_users.sh
-   ```
+### TypeScript
 
-3. For each user:
-   - The script will open a browser window to the user's profile
-   - Copy the generated script from the console output and paste it into the browser's developer console
-   - Press Enter in the terminal to continue to the next user after liking is complete
+The project uses strict TypeScript with full type safety. Configuration in `tsconfig.json`.
 
-## Notes
+### ESLint
 
-- All scripts include random delays between actions to avoid detection
-- The automated scripts require manual login for security reasons
-- Adjust delay times as needed to make behavior appear more natural
-- Use responsibly and be aware of X.com's usage policies
+ESLint is configured with:
+
+- `eslint:recommended`
+- `@typescript-eslint/recommended`
+- `plugin:unicorn/recommended`
+
+### Features
+
+- **Human-like delays**: Variable delays based on content complexity
+- **Reading time simulation**: Calculates realistic reading times
+- **Media consumption time**: Adds extra time for images/videos
+- **Behavioral patterns**: Simulates different user behaviors (quick skim, interested reading, distracted, engaged)
+- **Scroll behavior**: Natural scrolling with easing, wobble, and occasional overshoots
+- **Automation detection**: Monitors for X.com warning messages
+- **Visibility handling**: Pauses when browser tab is inactive
+- **Error handling**: Graceful error recovery
+
+## 🚨 Safety Features
+
+1. **Detection Monitoring**: Automatically stops if automation warnings detected
+2. **Rate Limiting**: Built-in delays to avoid triggering rate limits
+3. **Graceful Degradation**: Handles missing elements and errors
+4. **Manual Control**: Stop functionality to halt execution anytime
+5. **Tab Visibility**: Pauses when tab is not active
+
+## 📝 Notes
+
+- Scripts are designed for browser console execution only
+- Requires manual login for security
+- All timing delays are randomized for natural behavior
+- Use responsibly and in accordance with X.com's policies
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 👤 Author
+
+m3au - GitHub: [@m3au](https://github.com/m3au)
