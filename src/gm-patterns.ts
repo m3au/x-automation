@@ -15,6 +15,7 @@ export const gmPatterns: readonly string[] = [
   "g'morning",
   "gud mornin",
   "g'mornin",
+  "goodmorning",
 
   // Casual/Slang
   "mornin'",
@@ -46,11 +47,11 @@ export const gmPatterns: readonly string[] = [
 
 // GM reply composition parts with weights
 export const gmGreetingsWeighted = [
-  { text: "gm", weight: 30 },
+  { text: "gm", weight: 34 },
   { text: "gmgm", weight: 10 },
-  { text: "gm gm", weight: 10 },
-  { text: "buon giorno", weight: 3 },
-  { text: "bundinha", weight: 3 },
+  { text: "gm gm", weight: 12 },
+  { text: "buon giorno", weight: 1 },
+  { text: "bundinha", weight: 1 },
   { text: "good morning", weight: 4 },
   { text: "gooooood morning", weight: 3 },
   { text: "goood morning", weight: 3 },
@@ -64,7 +65,7 @@ export const gmGreetingsWeighted = [
   { text: "g'mornin", weight: 3 },
   { text: "mornin'", weight: 5 },
   { text: "mornin", weight: 5 },
-  { text: "good am", weight: 3 },
+  { text: "good am", weight: 1 },
 ];
 
 export const gmForeignGreetingsWeighted = [

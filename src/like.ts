@@ -46,7 +46,7 @@ import {
     // Automation settings
     defaultPostLimit: 300, // Number of posts to like per run
     skipOwnPosts: true, // Skip your own posts
-    ownUsername: "@mu", // Your username to skip
+    ownUsername: "m3aus", // Your username handle (with or without @)
 
     // Reading delays (varied speeds to look human)
     readingSpeed: { min: 250, max: 500 }, // Wide range WPM
@@ -91,10 +91,11 @@ import {
     // Reply generation probabilities
     replyChances: {
       foreignGreeting: 0.05, // 5% chance for foreign greeting
-      standaloneGreeting: 0.25, // 25% chance for greeting without name
+      standaloneGreeting: 0.45, // 45% chance for greeting without name
       emojiInGreeting: 0.4, // 40% chance to add emoji to standalone greeting
-      weekdayPhrase: 0.2, // 40% chance to use weekday-specific phrase
-      emojiAtEnd: 0.3, // 40% chance to add emoji at end of full reply
+      includePhrase: 0.1, // 10% chance to include phrase in full reply (vs just greeting + name)
+      weekdayPhrase: 0.2, // 20% chance to use weekday-specific phrase
+      emojiAtEnd: 0.3, // 30% chance to add emoji at end of full reply
     },
 
     // Reply typing/interaction delays
@@ -331,26 +332,33 @@ import {
       finalName = baseName;
     }
 
-    // Determine day of week (0 = Sunday, 1-6 = Mon-Sat)
-    const dayOfWeek = new Date().getDay();
+    // Build base reply: greeting + finalName
+    let reply = `${greeting} ${finalName}`;
 
-    // Pick phrase based on day
-    let phrase: string;
-    if (
-      gmWeekdayPhrases[dayOfWeek] &&
-      Math.random() < CONFIG.replyChances.weekdayPhrase
-    ) {
-      // Chance to use weekday-specific phrase
-      const dayPhrases = gmWeekdayPhrases[dayOfWeek];
-      phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-    } else {
-      // Otherwise use generic building phrases
-      phrase =
-        gmBuildingPhrases[Math.floor(Math.random() * gmBuildingPhrases.length)];
+    // Chance to include phrase
+    if (Math.random() < CONFIG.replyChances.includePhrase) {
+      // Determine day of week (0 = Sunday, 1-6 = Mon-Sat)
+      const dayOfWeek = new Date().getDay();
+
+      // Pick phrase based on day
+      let phrase: string;
+      if (
+        gmWeekdayPhrases[dayOfWeek] &&
+        Math.random() < CONFIG.replyChances.weekdayPhrase
+      ) {
+        // Chance to use weekday-specific phrase
+        const dayPhrases = gmWeekdayPhrases[dayOfWeek];
+        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
+      } else {
+        // Otherwise use generic building phrases
+        phrase =
+          gmBuildingPhrases[
+            Math.floor(Math.random() * gmBuildingPhrases.length)
+          ];
+      }
+
+      reply = `${reply}, ${phrase}`;
     }
-
-    // Build reply: greeting + finalName + phrase
-    let reply = `${greeting} ${finalName}, ${phrase}`;
 
     // Chance to add emoji at the end
     if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
@@ -434,24 +442,29 @@ import {
       finalName = baseName;
     }
 
-    // Determine day of week
-    const dayOfWeek = new Date().getDay();
+    // Build base reply: greeting + finalName
+    let reply = `${greeting} ${finalName}`;
 
-    // Pick phrase based on day
-    let phrase: string;
-    if (
-      gnWeekdayPhrases[dayOfWeek] &&
-      Math.random() < CONFIG.replyChances.weekdayPhrase
-    ) {
-      const dayPhrases = gnWeekdayPhrases[dayOfWeek];
-      phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-    } else {
-      phrase =
-        gnRestingPhrases[Math.floor(Math.random() * gnRestingPhrases.length)];
+    // Chance to include phrase
+    if (Math.random() < CONFIG.replyChances.includePhrase) {
+      // Determine day of week
+      const dayOfWeek = new Date().getDay();
+
+      // Pick phrase based on day
+      let phrase: string;
+      if (
+        gnWeekdayPhrases[dayOfWeek] &&
+        Math.random() < CONFIG.replyChances.weekdayPhrase
+      ) {
+        const dayPhrases = gnWeekdayPhrases[dayOfWeek];
+        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
+      } else {
+        phrase =
+          gnRestingPhrases[Math.floor(Math.random() * gnRestingPhrases.length)];
+      }
+
+      reply = `${reply}, ${phrase}`;
     }
-
-    // Build reply
-    let reply = `${greeting} ${finalName}, ${phrase}`;
 
     // Chance to add emoji at the end
     if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
@@ -533,24 +546,29 @@ import {
       finalName = baseName;
     }
 
-    // Determine day of week
-    const dayOfWeek = new Date().getDay();
+    // Build base reply: greeting + finalName
+    let reply = `${greeting} ${finalName}`;
 
-    // Pick phrase based on day
-    let phrase: string;
-    if (
-      gaWeekdayPhrases[dayOfWeek] &&
-      Math.random() < CONFIG.replyChances.weekdayPhrase
-    ) {
-      const dayPhrases = gaWeekdayPhrases[dayOfWeek];
-      phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-    } else {
-      phrase =
-        gaHustlePhrases[Math.floor(Math.random() * gaHustlePhrases.length)];
+    // Chance to include phrase
+    if (Math.random() < CONFIG.replyChances.includePhrase) {
+      // Determine day of week
+      const dayOfWeek = new Date().getDay();
+
+      // Pick phrase based on day
+      let phrase: string;
+      if (
+        gaWeekdayPhrases[dayOfWeek] &&
+        Math.random() < CONFIG.replyChances.weekdayPhrase
+      ) {
+        const dayPhrases = gaWeekdayPhrases[dayOfWeek];
+        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
+      } else {
+        phrase =
+          gaHustlePhrases[Math.floor(Math.random() * gaHustlePhrases.length)];
+      }
+
+      reply = `${reply}, ${phrase}`;
     }
-
-    // Build reply
-    let reply = `${greeting} ${finalName}, ${phrase}`;
 
     // Chance to add emoji at the end
     if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
@@ -638,7 +656,7 @@ import {
   }
 
   function isReplyPost(article: HTMLElement): boolean {
-    // Check for "Replying to" text
+    // Only check for "Replying to" text - most reliable indicator
     const socialContext = article.querySelector(
       '[data-testid="socialContext"]'
     );
@@ -646,18 +664,13 @@ import {
       return true;
     }
 
-    // Check parent container for reply-specific classes
-    const parentDiv = article.closest(
-      '[data-testid="cellInnerDiv"]'
-    )?.firstElementChild;
-    if (
-      parentDiv?.classList.contains("r-1igl3o0") ||
-      parentDiv?.classList.contains("r-qklmqi")
-    ) {
-      return true;
-    }
-
     return false;
+  }
+
+  function isOldVersionPost(article: HTMLElement): boolean {
+    // Check if post has "There's a new version of this post" text
+    const allText = article.textContent || "";
+    return allText.includes("There's a new version of this post");
   }
 
   function isGMPost(postText: string): boolean {
@@ -670,6 +683,15 @@ import {
 
   function isGAPost(postText: string): boolean {
     return detectGAPost(postText, CONFIG.gaPatterns);
+  }
+
+  function isLikeButtonDisabled(button: HTMLElement): boolean {
+    // Check if the SVG inside the button has the "disabled" class
+    const svg = button.querySelector("svg");
+    if (svg && svg.classList.contains("r-12c3ph5")) {
+      return true;
+    }
+    return false;
   }
 
   function isButtonAlreadyLiked(button: HTMLElement): boolean {
@@ -719,6 +741,11 @@ import {
         continue;
       }
 
+      // Skip old versions of edited posts
+      if (isOldVersionPost(article)) {
+        continue;
+      }
+
       let foundButton: HTMLElement | null = null;
 
       const interactionArea = article.querySelector('[role="group"]');
@@ -728,7 +755,10 @@ import {
         );
         if (buttons.length >= 3) {
           const potentialLikeButton = buttons[2];
-          if (!isButtonAlreadyLiked(potentialLikeButton)) {
+          if (
+            !isButtonAlreadyLiked(potentialLikeButton) &&
+            !isLikeButtonDisabled(potentialLikeButton)
+          ) {
             foundButton = potentialLikeButton;
           }
         }
@@ -738,7 +768,11 @@ import {
         const directLikeButton = article.querySelector<HTMLElement>(
           '[data-testid="like"]'
         );
-        if (directLikeButton && !isButtonAlreadyLiked(directLikeButton)) {
+        if (
+          directLikeButton &&
+          !isButtonAlreadyLiked(directLikeButton) &&
+          !isLikeButtonDisabled(directLikeButton)
+        ) {
           foundButton = directLikeButton;
         }
       }
@@ -748,7 +782,8 @@ import {
           article.querySelectorAll<HTMLElement>("button")
         );
         for (const button of allButtons) {
-          if (isButtonAlreadyLiked(button)) continue;
+          if (isButtonAlreadyLiked(button) || isLikeButtonDisabled(button))
+            continue;
 
           const paths = button.querySelectorAll("path");
           for (const path of paths) {
@@ -797,6 +832,10 @@ import {
 
         if (isButtonAlreadyLiked(thirdButton)) {
           alreadyLikedButtons.push(thirdButton);
+          continue;
+        }
+
+        if (isLikeButtonDisabled(thirdButton)) {
           continue;
         }
 
@@ -1246,6 +1285,22 @@ import {
           continue;
         }
 
+        // Check if likes are disabled on this button
+        if (isLikeButtonDisabled(nextButtonToLike)) {
+          console.log("⚠️ Likes disabled on this post - skipping");
+          continue;
+        }
+
+        // Check if this is an old version of an edited post
+        if (
+          post &&
+          post.tagName.toLowerCase() === "article" &&
+          isOldVersionPost(post)
+        ) {
+          console.log("⚠️ Old version of edited post - skipping");
+          continue;
+        }
+
         let isGM = false;
         let isGN = false;
         let isGA = false;
@@ -1333,22 +1388,39 @@ import {
             Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
         );
 
-        // Get author before clicking
+        // Get author display name and username handle
         let authorName = "Unknown";
+        let authorHandle = "";
         if (post && post.tagName.toLowerCase() === "article") {
           const authorElement = post.querySelector(
             '[data-testid="User-Name"] a[role="link"]'
           );
           authorName = authorElement?.textContent?.trim() || "Unknown";
+
+          // Get username handle from the link href (e.g., "/m3aus" -> "@m3aus")
+          const href = authorElement?.getAttribute("href");
+          if (href) {
+            authorHandle = "@" + href.replace(/^\//, "");
+          }
         }
 
-        // Skip own posts
-        if (
-          CONFIG.skipOwnPosts &&
-          authorName.toLowerCase().includes(CONFIG.ownUsername.toLowerCase())
-        ) {
-          console.log(`⏭️ Skipping own post by ${CONFIG.ownUsername}`);
-          continue;
+        // Skip own posts (check both display name and handle)
+        if (CONFIG.skipOwnPosts) {
+          const ownUsername = CONFIG.ownUsername
+            .toLowerCase()
+            .replace(/^@/, "");
+          const handleWithoutAt = authorHandle.toLowerCase().replace(/^@/, "");
+          const isOwnPost =
+            authorName.toLowerCase() === ownUsername ||
+            handleWithoutAt === ownUsername ||
+            handleWithoutAt.includes(ownUsername);
+
+          if (isOwnPost) {
+            console.log(
+              `⏭️ Skipping own post by ${authorHandle || authorName}`
+            );
+            continue;
+          }
         }
 
         nextButtonToLike.click();
@@ -1380,91 +1452,120 @@ import {
             '[data-testid="reply"]'
           ) as HTMLElement;
           console.log(`🔍 Reply button found: ${!!replyButton}`);
+
+          // Check if replies are disabled
           if (replyButton) {
-            await sleep(
-              CONFIG.replyDelays.beforeReplyClick.min +
-                Math.random() *
-                  (CONFIG.replyDelays.beforeReplyClick.max -
-                    CONFIG.replyDelays.beforeReplyClick.min)
-            );
-            console.log(`💬 Opening ${postType} post reply box...`);
-            replyButton.click();
-            console.log("💬 Reply button clicked");
-            await sleep(
-              CONFIG.replyDelays.waitForReplyBox.min +
-                Math.random() *
-                  (CONFIG.replyDelays.waitForReplyBox.max -
-                    CONFIG.replyDelays.waitForReplyBox.min)
-            ); // Wait for reply box to open
-
-            // Generate appropriate reply
-            let reply: string;
-            if (isGM) {
-              reply = generateGMReply(authorName);
-              console.log(`💬 Generated GM reply: "${reply}"`);
-            } else if (isGN) {
-              reply = generateGNReply(authorName);
-              console.log(`💬 Generated GN reply: "${reply}"`);
+            const svg = replyButton.querySelector("svg");
+            if (svg && svg.classList.contains("r-12c3ph5")) {
+              console.log(
+                `⚠️ Replies disabled on this ${postType} post - skipping reply`
+              );
             } else {
-              reply = generateGAReply(authorName);
-              console.log(`💬 Generated GA reply: "${reply}"`);
-            }
+              await sleep(
+                CONFIG.replyDelays.beforeReplyClick.min +
+                  Math.random() *
+                    (CONFIG.replyDelays.beforeReplyClick.max -
+                      CONFIG.replyDelays.beforeReplyClick.min)
+              );
+              console.log(`💬 Opening ${postType} post reply box...`);
+              replyButton.click();
+              console.log("💬 Reply button clicked");
+              await sleep(
+                CONFIG.replyDelays.waitForReplyBox.min +
+                  Math.random() *
+                    (CONFIG.replyDelays.waitForReplyBox.max -
+                      CONFIG.replyDelays.waitForReplyBox.min)
+              ); // Wait for reply box to open
 
-            // Find the Draft.js contenteditable div
-            const replyBox = document.querySelector(
-              '[data-testid="tweetTextarea_0"]'
-            ) as HTMLElement;
-            if (replyBox) {
-              // Type the reply using Draft.js method
-              const draftEditor = replyBox.closest('[role="textbox"]');
-              if (draftEditor) {
-                // Set focus
-                (draftEditor as HTMLElement).focus();
-                await sleep(
-                  CONFIG.replyDelays.afterFocus.min +
-                    Math.random() *
-                      (CONFIG.replyDelays.afterFocus.max -
-                        CONFIG.replyDelays.afterFocus.min)
-                );
+              // Generate appropriate reply
+              let reply: string;
+              if (isGM) {
+                reply = generateGMReply(authorName);
+                console.log(`💬 Generated GM reply: "${reply}"`);
+              } else if (isGN) {
+                reply = generateGNReply(authorName);
+                console.log(`💬 Generated GN reply: "${reply}"`);
+              } else {
+                reply = generateGAReply(authorName);
+                console.log(`💬 Generated GA reply: "${reply}"`);
+              }
 
-                // Type character by character for human-like behavior
-                for (const char of reply) {
-                  document.execCommand("insertText", false, char);
+              // Find the Draft.js contenteditable div
+              const replyBox = document.querySelector(
+                '[data-testid="tweetTextarea_0"]'
+              ) as HTMLElement;
+              if (replyBox) {
+                // Type the reply using Draft.js method
+                const draftEditor = replyBox.closest('[role="textbox"]');
+                if (draftEditor) {
+                  // Set focus
+                  (draftEditor as HTMLElement).focus();
                   await sleep(
-                    CONFIG.replyDelays.perCharacter.min +
+                    CONFIG.replyDelays.afterFocus.min +
                       Math.random() *
-                        (CONFIG.replyDelays.perCharacter.max -
-                          CONFIG.replyDelays.perCharacter.min)
+                        (CONFIG.replyDelays.afterFocus.max -
+                          CONFIG.replyDelays.afterFocus.min)
                   );
-                }
 
-                console.log(
-                  `💬 ${postType} reply typed, clicking send button...`
-                );
-                await sleep(
-                  CONFIG.replyDelays.beforeSend.min +
-                    Math.random() *
-                      (CONFIG.replyDelays.beforeSend.max -
-                        CONFIG.replyDelays.beforeSend.min)
-                );
+                  // Type character by character for human-like behavior
+                  for (const char of reply) {
+                    document.execCommand("insertText", false, char);
+                    await sleep(
+                      CONFIG.replyDelays.perCharacter.min +
+                        Math.random() *
+                          (CONFIG.replyDelays.perCharacter.max -
+                            CONFIG.replyDelays.perCharacter.min)
+                    );
+                  }
 
-                // Find and click the Reply button
-                const tweetButton = document.querySelector(
-                  '[data-testid="tweetButton"]'
-                ) as HTMLElement;
-                if (tweetButton) {
-                  tweetButton.click();
-                  console.log(`💬 ${postType} reply sent!`);
+                  console.log(
+                    `💬 ${postType} reply typed, clicking send button...`
+                  );
                   await sleep(
-                    CONFIG.replyDelays.waitForModalClose.min +
+                    CONFIG.replyDelays.beforeSend.min +
                       Math.random() *
-                        (CONFIG.replyDelays.waitForModalClose.max -
-                          CONFIG.replyDelays.waitForModalClose.min)
-                  ); // Wait for modal to auto-close
-                  console.log("💬 Modal auto-closed, continuing to next post");
+                        (CONFIG.replyDelays.beforeSend.max -
+                          CONFIG.replyDelays.beforeSend.min)
+                  );
+
+                  // Find and click the Reply button
+                  const tweetButton = document.querySelector(
+                    '[data-testid="tweetButton"]'
+                  ) as HTMLElement;
+                  if (tweetButton) {
+                    tweetButton.click();
+                    console.log(`💬 ${postType} reply sent!`);
+                    await sleep(
+                      CONFIG.replyDelays.waitForModalClose.min +
+                        Math.random() *
+                          (CONFIG.replyDelays.waitForModalClose.max -
+                            CONFIG.replyDelays.waitForModalClose.min)
+                    ); // Wait for modal to auto-close
+                    console.log(
+                      "💬 Modal auto-closed, continuing to next post"
+                    );
+                  } else {
+                    console.log(
+                      "⚠️ Could not find tweet button - closing manually"
+                    );
+                    document.dispatchEvent(
+                      new KeyboardEvent("keydown", {
+                        key: "Escape",
+                        code: "Escape",
+                        keyCode: 27,
+                        bubbles: true,
+                      })
+                    );
+                    await sleep(
+                      CONFIG.replyDelays.escapeKeyFallback.min +
+                        Math.random() *
+                          (CONFIG.replyDelays.escapeKeyFallback.max -
+                            CONFIG.replyDelays.escapeKeyFallback.min)
+                    );
+                  }
                 } else {
                   console.log(
-                    "⚠️ Could not find tweet button - closing manually"
+                    `⚠️ Could not find Draft.js editor for ${postType} - closing modal`
                   );
                   document.dispatchEvent(
                     new KeyboardEvent("keydown", {
@@ -1483,7 +1584,7 @@ import {
                 }
               } else {
                 console.log(
-                  `⚠️ Could not find Draft.js editor for ${postType} - closing modal`
+                  `⚠️ Could not find reply box for ${postType} - closing modal`
                 );
                 document.dispatchEvent(
                   new KeyboardEvent("keydown", {
@@ -1500,24 +1601,6 @@ import {
                         CONFIG.replyDelays.escapeKeyFallback.min)
                 );
               }
-            } else {
-              console.log(
-                `⚠️ Could not find reply box for ${postType} - closing modal`
-              );
-              document.dispatchEvent(
-                new KeyboardEvent("keydown", {
-                  key: "Escape",
-                  code: "Escape",
-                  keyCode: 27,
-                  bubbles: true,
-                })
-              );
-              await sleep(
-                CONFIG.replyDelays.escapeKeyFallback.min +
-                  Math.random() *
-                    (CONFIG.replyDelays.escapeKeyFallback.max -
-                      CONFIG.replyDelays.escapeKeyFallback.min)
-              );
             }
           }
         }

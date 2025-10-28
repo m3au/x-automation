@@ -8,6 +8,7 @@ export const gaPatterns: readonly string[] = [
   "ga",
   "ga,",
   "good afternoon",
+  "goodafternoon",
   "good pm",
 
   // Casual/Slang
