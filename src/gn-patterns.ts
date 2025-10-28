@@ -26,7 +26,6 @@ export const gnPatterns: readonly string[] = [
   "rest easy",
   "night vibes",
   "peaceful night",
-  "dream big",
 
   // Crypto/NFT Community
   "wagmi, tomorrow",
