@@ -3,16 +3,18 @@
  * Browser console script for automated liking with human-like behavior
  */
 
-import { CONFIG, type ScrollOptions } from "./config";
 import {
   checkForAutomationWarning,
   checkForDeletedPost,
   findAllLikeButtons,
   getButtonUniqueId,
+  humanLikeScroll,
   isButtonAlreadyLiked,
+  isDocumentVisible,
   isLikeButtonDisabled,
   isOldVersionPost,
   isReplyPost,
+  waitForVisibility,
 } from "./dom-utils";
 import {
   isGAPost as detectGAPost,
@@ -30,6 +32,8 @@ import {
   generateSayItBackReply,
   hasSayItBack,
 } from "./reply-generators";
+
+import { CONFIG } from "./config";
 
 (function () {
   "use strict";
@@ -152,83 +156,176 @@ import {
     return sleep(finalDelay);
   }
 
-  async function humanLikeScroll(
-    targetY: number,
-    options: ScrollOptions = {}
-  ): Promise<void> {
-    const {
-      variation = "normal",
-      shouldOvershoot = Math.random() < CONFIG.scrollOvershotChance,
-    } = options;
+  // Dive into comments and like some replies
+  async function diveIntoComments(post: HTMLElement): Promise<number> {
+    console.log("🏊 Diving into comments to like some replies...");
 
-    const startY = window.scrollY;
-    const distance = targetY - startY;
-
-    // Determine scroll characteristics based on variation
-    let steps: number;
-    let baseStepDelay: number;
-
-    switch (variation) {
-      case "quick":
-        steps = 10 + Math.floor(Math.random() * 5);
-        baseStepDelay = 20 + Math.random() * 10;
-        break;
-      case "careful":
-        steps = 25 + Math.floor(Math.random() * 10);
-        baseStepDelay = 40 + Math.random() * 20;
-        break;
-      default: // normal
-        steps = 15 + Math.floor(Math.random() * 8);
-        baseStepDelay = 30 + Math.random() * 15;
-    }
-
-    // Calculate overshoot if needed
-    let overshootDistance = 0;
-    if (shouldOvershoot) {
-      overshootDistance =
-        (Math.random() * 0.2 + 0.1) * window.innerHeight * Math.sign(distance);
-      console.log("Adding scroll overshoot");
-    }
-
-    // Perform the scroll
-    for (let i = 0; i <= steps; i++) {
-      const progress = i / steps;
-      // Easing function for more natural movement
-      const easeInOutCubic =
-        progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-      // Add slight horizontal wobble for realism
-      const wobble = Math.random() * 2 - 1;
-      window.scrollBy(
-        wobble,
-        distance * (easeInOutCubic - (i > 0 ? (i - 1) / steps : 0))
-      );
-
-      // Variable delay between steps
-      const stepDelay = baseStepDelay * (1 + Math.random() * 0.5);
-      await sleep(stepDelay);
-    }
-
-    // Handle overshoot and correction if needed
-    if (shouldOvershoot) {
-      window.scrollBy(0, overshootDistance);
-      await sleep(200 + Math.random() * 300);
-
-      // Scroll back smoothly
-      const correctionSteps = 8 + Math.floor(Math.random() * 5);
-      for (let i = 0; i <= correctionSteps; i++) {
-        const progress = i / correctionSteps;
-        const easeOutQuad = 1 - (1 - progress) * (1 - progress);
-        window.scrollBy(
-          0,
-          -overshootDistance *
-            (easeOutQuad - (i > 0 ? (i - 1) / correctionSteps : 0))
-        );
-        await sleep(30 + Math.random() * 20);
+    // Check how many replies this post has
+    const replyButton = post.querySelector('[data-testid="reply"]');
+    let replyCount = 0;
+    if (replyButton) {
+      const ariaLabel = replyButton.getAttribute("aria-label") || "";
+      const match = ariaLabel.match(/(\d+)\s+Repl/i);
+      if (match) {
+        replyCount = parseInt(match[1], 10);
+        console.log(`📊 Post has ${replyCount} replies`);
       }
     }
+
+    // If no replies or couldn't determine, skip
+    if (replyCount === 0) {
+      console.log("⚠️ No replies found in post, skipping dive");
+      return 0;
+    }
+
+    // Find the timestamp link to click (safer than clicking the whole post)
+    const timeLink = post.querySelector<HTMLAnchorElement>(
+      'a[role="link"][href*="/status/"]'
+    );
+    if (!timeLink) {
+      console.log("⚠️ Could not find timestamp link to open post");
+      return 0;
+    }
+
+    // Click the post to open it
+    timeLink.click();
+    console.log("📖 Opened post");
+
+    // Wait for comments to load
+    const waitTime =
+      CONFIG.diveIntoComments.waitForLoad.min +
+      Math.random() *
+        (CONFIG.diveIntoComments.waitForLoad.max -
+          CONFIG.diveIntoComments.waitForLoad.min);
+    await sleep(waitTime);
+
+    // Find all reply posts (articles that are replies)
+    const allArticles = Array.from(document.querySelectorAll("article"));
+    const replyArticles = allArticles.filter((article) => isReplyPost(article));
+
+    console.log(`Found ${replyArticles.length} replies in comments`);
+
+    if (replyArticles.length === 0) {
+      console.log("⚠️ No replies found, going back");
+      const backButton = document.querySelector<HTMLElement>(
+        '[data-testid="app-bar-back"]'
+      );
+      if (backButton) {
+        await sleep(
+          CONFIG.diveIntoComments.beforeBack.min +
+            Math.random() *
+              (CONFIG.diveIntoComments.beforeBack.max -
+                CONFIG.diveIntoComments.beforeBack.min)
+        );
+        backButton.click();
+        await sleep(
+          CONFIG.diveIntoComments.afterBack.min +
+            Math.random() *
+              (CONFIG.diveIntoComments.afterBack.max -
+                CONFIG.diveIntoComments.afterBack.min)
+        );
+      }
+      return 0;
+    }
+
+    // Determine how many replies to like (limit by both available replies and configured max)
+    const repliesToLike =
+      CONFIG.diveIntoComments.minRepliesToLike +
+      Math.floor(
+        Math.random() *
+          (CONFIG.diveIntoComments.maxRepliesToLike -
+            CONFIG.diveIntoComments.minRepliesToLike +
+            1)
+      );
+    // Don't try to like more than the post has or what we found
+    const targetCount = Math.min(
+      repliesToLike,
+      replyCount,
+      replyArticles.length
+    );
+    console.log(
+      `Planning to like ${targetCount} replies (post has ${replyCount}, found ${replyArticles.length})`
+    );
+
+    let likedCount = 0;
+
+    // Like the first N replies
+    for (let i = 0; i < targetCount && i < replyArticles.length; i++) {
+      const replyArticle = replyArticles[i];
+
+      // Find the like button in this reply
+      const likeButton = replyArticle.querySelector<HTMLElement>(
+        '[data-testid="like"]'
+      );
+
+      if (!likeButton) {
+        console.log(`⚠️ Reply ${i + 1}: No like button found`);
+        continue;
+      }
+
+      // Check if already liked
+      if (isButtonAlreadyLiked(likeButton)) {
+        console.log(`⚠️ Reply ${i + 1}: Already liked`);
+        continue;
+      }
+
+      // Check if likes are disabled
+      if (isLikeButtonDisabled(likeButton)) {
+        console.log(`⚠️ Reply ${i + 1}: Likes disabled`);
+        continue;
+      }
+
+      // Scroll to the reply
+      const rect = replyArticle.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top - window.innerHeight / 2;
+      await humanLikeScroll(targetY, { variation: "quick" });
+
+      // Small delay before liking
+      await sleep(
+        CONFIG.beforeClick.min +
+          Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
+      );
+
+      // Like the reply
+      likeButton.click();
+      likedCount++;
+      console.log(`💙 Liked reply ${i + 1}/${targetCount}`);
+
+      // Small delay after liking
+      await sleep(
+        CONFIG.afterClick.min +
+          Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min)
+      );
+    }
+
+    console.log(`✅ Liked ${likedCount} replies in comments`);
+
+    // Find and click the back button
+    const backButton = document.querySelector<HTMLElement>(
+      '[data-testid="app-bar-back"]'
+    );
+    if (backButton) {
+      await sleep(
+        CONFIG.diveIntoComments.beforeBack.min +
+          Math.random() *
+            (CONFIG.diveIntoComments.beforeBack.max -
+              CONFIG.diveIntoComments.beforeBack.min)
+      );
+      backButton.click();
+      console.log("⬅️ Clicked back button");
+
+      // Wait for timeline to load
+      await sleep(
+        CONFIG.diveIntoComments.afterBack.min +
+          Math.random() *
+            (CONFIG.diveIntoComments.afterBack.max -
+              CONFIG.diveIntoComments.afterBack.min)
+      );
+    } else {
+      console.log("⚠️ Could not find back button");
+    }
+
+    return likedCount;
   }
 
   async function likeAllPosts(limit = 10): Promise<void> {
@@ -246,58 +343,6 @@ import {
           (CONFIG.breathingBreak.afterActions.max -
             CONFIG.breathingBreak.afterActions.min)
       );
-
-    // Function to check if document is visible
-    function isDocumentVisible(): boolean {
-      return !document.hidden;
-    }
-
-    // Function to wait for document to become visible
-    async function waitForVisibility(
-      maxWaitTime = CONFIG.maxVisibilityWait
-    ): Promise<boolean> {
-      console.log("Page not active. Waiting for visibility...");
-
-      if (isDocumentVisible()) {
-        return true;
-      }
-
-      return new Promise((resolve) => {
-        let waitTime = 0;
-        const checkInterval = CONFIG.visibilityCheckInterval;
-
-        const visibilityInterval = setInterval(() => {
-          waitTime += checkInterval;
-
-          if (isDocumentVisible()) {
-            console.log("Page became active again, continuing...");
-            clearInterval(visibilityInterval);
-            resolve(true);
-          }
-
-          if (waitTime >= maxWaitTime || shouldStop) {
-            console.log("Max wait time reached or stop requested");
-            clearInterval(visibilityInterval);
-            resolve(false);
-          }
-        }, checkInterval);
-
-        // Also listen for visibility change events
-        const handleVisibilityChange = (): void => {
-          if (isDocumentVisible()) {
-            console.log("Page became active again, continuing...");
-            document.removeEventListener(
-              "visibilitychange",
-              handleVisibilityChange
-            );
-            clearInterval(visibilityInterval);
-            resolve(true);
-          }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-      });
-    }
 
     console.log("Starting to process posts...");
     await sleep(CONFIG.initialDelay);
@@ -443,7 +488,9 @@ import {
               "No posts found and browser tab inactive - pausing until active again"
             );
             consecutiveNoNewButtons = 0; // Reset counter
-            const becameVisible = await waitForVisibility();
+            const becameVisible = await waitForVisibility(
+              CONFIG.maxVisibilityWait
+            );
             if (!becameVisible || shouldStop) {
               console.log("Stopping after visibility wait");
               return;
@@ -841,6 +888,24 @@ import {
           }
         }
 
+        // Occasionally dive into comments and like some replies (only for non-GM/GN/GA/GE/HBD posts)
+        if (
+          CONFIG.diveIntoComments.enabled &&
+          !(isGM || isGN || isGA || isGE || isHBD) &&
+          Math.random() < CONFIG.diveIntoComments.chance &&
+          post &&
+          post.tagName.toLowerCase() === "article"
+        ) {
+          const likedRepliesCount = await diveIntoComments(post);
+          if (likedRepliesCount > 0) {
+            // Count replied likes toward action counter
+            actionsSinceBreak += likedRepliesCount;
+            console.log(
+              `📊 Actions since break: ${actionsSinceBreak} (including ${likedRepliesCount} reply likes)`
+            );
+          }
+        }
+
         // Check if post was deleted - skip it completely
         if (checkForDeletedPost()) {
           console.log("ℹ️ Deleted post - skipping");
@@ -891,6 +956,19 @@ import {
           await sleep(breakDuration);
 
           console.log("✅ Break complete - resuming automation...\n");
+
+          // Click home icon to reset timeline
+          console.log("🏠 Clicking home icon to refresh timeline...");
+          const homeLink = document.querySelector<HTMLAnchorElement>(
+            'a[href="/home"][aria-label="Home"]'
+          );
+          if (homeLink) {
+            homeLink.click();
+            console.log("✅ Timeline refreshed");
+            await sleep(2000 + Math.random() * 2000); // Wait for timeline to load
+          } else {
+            console.log("⚠️ Could not find home icon, continuing anyway");
+          }
 
           // Reset counter and randomize next break point
           actionsSinceBreak = 0;

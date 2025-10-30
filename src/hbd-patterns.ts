@@ -32,16 +32,9 @@ export const hbdPatterns: readonly string[] = [
   "another trip around the sun",
 
   // Meme-y/Playful
-  "level up",
   "new age unlocked",
   "age up",
   "+1 year",
-
-  // Celebratory
-  "celebrate today",
-  "your special day",
-  "birthday celebration",
-  "born this day",
 ];
 
 // HBD reply composition parts with weights

@@ -45,6 +45,58 @@ describe("Reply Generators", () => {
       expect(normalizeAuthorName("𝓗𝓞𝓛𝓨")).toBe("HOLY");
     });
 
+    test("should handle dotted names by taking only first part", () => {
+      expect(normalizeAuthorName("neon.something.something")).toBe("neon");
+      expect(normalizeAuthorName("alice.eth.xyz")).toBe("alice");
+      expect(normalizeAuthorName("bob.crypto")).toBe("bob");
+      expect(normalizeAuthorName("user.name.here")).toBe("user");
+    });
+
+    test("should handle dotted names with emojis", () => {
+      expect(normalizeAuthorName("🔥neon.something.something😊")).toBe("neon");
+      expect(normalizeAuthorName("alice🌟.eth.xyz")).toBe("alice");
+    });
+
+    test("should handle dotted names with fancy Unicode", () => {
+      expect(normalizeAuthorName("ｎｅｏｎ.something.something")).toBe("neon");
+      expect(normalizeAuthorName("𝐀𝐥𝐢𝐜𝐞.eth.xyz")).toBe("Alice");
+    });
+
+    test("should preserve names without dots", () => {
+      expect(normalizeAuthorName("neon")).toBe("neon");
+      expect(normalizeAuthorName("alice123")).toBe("alice123");
+      expect(normalizeAuthorName("BobTheBuilder")).toBe("BobTheBuilder");
+    });
+
+    test("should strip trailing punctuation", () => {
+      expect(normalizeAuthorName("John.")).toBe("John");
+      expect(normalizeAuthorName("Alice,")).toBe("Alice");
+      expect(normalizeAuthorName("Bob...")).toBe("Bob");
+      expect(normalizeAuthorName("Sarah!!!")).toBe("Sarah");
+      expect(normalizeAuthorName("Mike???")).toBe("Mike");
+    });
+
+    test("should strip leading punctuation", () => {
+      expect(normalizeAuthorName(".John")).toBe("John");
+      expect(normalizeAuthorName("@Alice")).toBe("Alice");
+      expect(normalizeAuthorName("(Bob)")).toBe("Bob");
+      expect(normalizeAuthorName("[Sarah]")).toBe("Sarah");
+      expect(normalizeAuthorName("{Mike}")).toBe("Mike");
+    });
+
+    test("should strip both leading and trailing punctuation", () => {
+      expect(normalizeAuthorName("...John...")).toBe("John");
+      expect(normalizeAuthorName("@@Alice@@")).toBe("Alice");
+      expect(normalizeAuthorName("((Bob))")).toBe("Bob");
+      expect(normalizeAuthorName("--Sarah--")).toBe("Sarah");
+    });
+
+    test("should handle complex punctuation combinations", () => {
+      expect(normalizeAuthorName("John.,;!")).toBe("John");
+      expect(normalizeAuthorName("@#$Alice%^&")).toBe("Alice");
+      expect(normalizeAuthorName("+++Bob---")).toBe("Bob");
+    });
+
     test("should remove diacritics", () => {
       expect(normalizeAuthorName("José García")).toBe("Jose Garcia");
       expect(normalizeAuthorName("François")).toBe("Francois");
@@ -150,7 +202,9 @@ describe("Reply Generators", () => {
         const reply = generateSayItBackReply("gm say it back");
         // Should end with one of the laugh emojis
         const laughEmojis = ["😂", "🤣", "😭", "💀", "😹", "😆", "😅"];
-        const hasLaughEmoji = laughEmojis.some((emoji) => reply.includes(emoji));
+        const hasLaughEmoji = laughEmojis.some((emoji) =>
+          reply.includes(emoji)
+        );
         expect(hasLaughEmoji).toBe(true);
       }
     });
@@ -170,4 +224,3 @@ describe("Reply Generators", () => {
     });
   });
 });
-

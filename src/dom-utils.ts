@@ -279,3 +279,135 @@ export function checkForAutomationWarning(): boolean {
 
   return false;
 }
+
+export function isDocumentVisible(): boolean {
+  return !document.hidden;
+}
+
+export async function waitForVisibility(maxWaitTime: number): Promise<boolean> {
+  console.log("Page not active. Waiting for visibility...");
+
+  if (isDocumentVisible()) {
+    return true;
+  }
+
+  return new Promise((resolve) => {
+    let waitTime = 0;
+    const checkInterval = 2000;
+
+    const visibilityInterval = setInterval(() => {
+      waitTime += checkInterval;
+
+      if (isDocumentVisible()) {
+        console.log("Page became active again, continuing...");
+        clearInterval(visibilityInterval);
+        resolve(true);
+      }
+
+      if (waitTime >= maxWaitTime) {
+        console.log("Max wait time reached");
+        clearInterval(visibilityInterval);
+        resolve(false);
+      }
+    }, checkInterval);
+
+    // Also listen for visibility change events
+    const handleVisibilityChange = (): void => {
+      if (isDocumentVisible()) {
+        console.log("Page became active again, continuing...");
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+        clearInterval(visibilityInterval);
+        resolve(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  });
+}
+
+export async function humanLikeScroll(
+  targetY: number,
+  options: {
+    variation?: "quick" | "normal" | "careful";
+    shouldOvershoot?: boolean;
+  } = {}
+): Promise<void> {
+  const { variation = "normal", shouldOvershoot = Math.random() < 0.3 } =
+    options;
+
+  const startY = window.scrollY;
+  const distance = targetY - startY;
+
+  // Determine scroll characteristics based on variation
+  let steps: number;
+  let baseStepDelay: number;
+
+  switch (variation) {
+    case "quick":
+      steps = 10 + Math.floor(Math.random() * 5);
+      baseStepDelay = 20 + Math.random() * 10;
+      break;
+    case "careful":
+      steps = 25 + Math.floor(Math.random() * 10);
+      baseStepDelay = 40 + Math.random() * 20;
+      break;
+    default: // normal
+      steps = 15 + Math.floor(Math.random() * 8);
+      baseStepDelay = 30 + Math.random() * 15;
+  }
+
+  // Calculate overshoot if needed
+  let overshootDistance = 0;
+  if (shouldOvershoot) {
+    overshootDistance =
+      (Math.random() * 0.2 + 0.1) * window.innerHeight * Math.sign(distance);
+    console.log("Adding scroll overshoot");
+  }
+
+  // Perform the scroll
+  for (let i = 0; i <= steps; i++) {
+    const progress = i / steps;
+    // Easing function for more natural movement
+    const easeInOutCubic =
+      progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+    // Add slight horizontal wobble for realism
+    const wobble = Math.random() * 2 - 1;
+    window.scrollBy(
+      wobble,
+      distance * (easeInOutCubic - (i > 0 ? (i - 1) / steps : 0))
+    );
+
+    // Variable delay between steps
+    const stepDelay = baseStepDelay * (1 + Math.random() * 0.5);
+    await new Promise((resolve) => setTimeout(resolve, stepDelay));
+  }
+
+  // Handle overshoot and correction if needed
+  if (shouldOvershoot) {
+    window.scrollBy(0, overshootDistance);
+    await new Promise((resolve) =>
+      setTimeout(resolve, 200 + Math.random() * 300)
+    );
+
+    // Scroll back smoothly
+    const correctionSteps = 8 + Math.floor(Math.random() * 5);
+    for (let i = 0; i <= correctionSteps; i++) {
+      const progress = i / correctionSteps;
+      const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+      window.scrollBy(
+        0,
+        -overshootDistance *
+          (easeOutQuad - (i > 0 ? (i - 1) / correctionSteps : 0))
+      );
+      await new Promise((resolve) =>
+        setTimeout(resolve, 30 + Math.random() * 20)
+      );
+    }
+  }
+}

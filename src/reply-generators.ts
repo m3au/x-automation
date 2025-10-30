@@ -103,6 +103,20 @@ export function normalizeAuthorName(name: string): string {
   // Clean up whitespace
   normalized = normalized.trim();
 
+  // Strip trailing/leading punctuation and termination characters FIRST
+  // Remove: . , ; : ! ? - _ = + | / \ ( ) [ ] { } < > " ' ` ~ @ # $ % ^ & *
+  normalized = normalized.replace(
+    /^[.,;:!?\-_=+|/\\()\[\]{}<>"'`~@#$%^&*]+|[.,;:!?\-_=+|/\\()\[\]{}<>"'`~@#$%^&*]+$/g,
+    ""
+  );
+  normalized = normalized.trim();
+
+  // Handle dotted names like "neon.something.something" → "neon"
+  // Take only the first part before the first dot
+  if (normalized.includes(".")) {
+    normalized = normalized.split(".")[0].trim();
+  }
+
   // Handle spaced-out names like "H O L Y" → "HOLY"
   // Only collapse if ALL words are single characters (not "John Smith")
   const words = normalized.split(/\s+/);
@@ -110,6 +124,9 @@ export function normalizeAuthorName(name: string): string {
     // All words are single letters, collapse them
     normalized = words.join("");
   }
+
+  // Final trim to remove any whitespace
+  normalized = normalized.trim();
 
   // If the name is now empty or too short, return empty (will trigger fallback)
   if (normalized.length < 2) {

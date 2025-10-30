@@ -132,6 +132,17 @@ export const CONFIG = {
     duration: { min: 180000, max: 300000 }, // 3-5 minutes (in milliseconds)
   },
 
+  // Dive into comments feature (occasionally like replies)
+  diveIntoComments: {
+    enabled: true,
+    chance: 1, // 100% chance to dive into a post's comments (FOR TESTING - set back to 0.15 for production)
+    minRepliesToLike: 1,
+    maxRepliesToLike: 10,
+    waitForLoad: { min: 2000, max: 4000 }, // Wait for comments to load
+    beforeBack: { min: 1000, max: 2500 }, // Wait before clicking back
+    afterBack: { min: 1500, max: 3000 }, // Wait after returning to timeline
+  },
+
   // Emojis for replies (time-of-day specific)
   gmEmojis: [
     "☀️",
