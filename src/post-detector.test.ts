@@ -1,9 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+// @ts-expect-error - Bun test types
 import { describe, expect, test } from "bun:test";
-import { isGAPost, isGMPost, isGNPost } from "./post-detector";
+import {
+  isGAPost,
+  isGEPost,
+  isGMPost,
+  isGNPost,
+  isHBDPost,
+} from "./post-detector";
 
 import { gaPatterns } from "./ga-patterns";
+import { gePatterns } from "./ge-patterns";
 import { gmPatterns } from "./gm-patterns";
 import { gnPatterns } from "./gn-patterns";
+import { hbdPatterns } from "./hbd-patterns";
 
 describe("Post Detection", () => {
   describe("isGMPost", () => {
@@ -110,6 +120,85 @@ describe("Post Detection", () => {
     test("should handle emoji and special characters", () => {
       expect(isGAPost("ga 🌤️", gaPatterns)).toBe(true);
       expect(isGAPost("☀️ good afternoon!", gaPatterns)).toBe(true);
+    });
+  });
+
+  describe("isGEPost", () => {
+    test("should detect 'ge' as GE post", () => {
+      expect(isGEPost("ge everyone!", gePatterns)).toBe(true);
+      expect(isGEPost("GE fam", gePatterns)).toBe(true);
+      expect(isGEPost("ge ge", gePatterns)).toBe(true);
+    });
+
+    test("should detect 'good evening' as GE post", () => {
+      expect(isGEPost("good evening friends", gePatterns)).toBe(true);
+      expect(isGEPost("Good Evening everyone!", gePatterns)).toBe(true);
+    });
+
+    test("should be case insensitive", () => {
+      expect(isGEPost("GE", gePatterns)).toBe(true);
+      expect(isGEPost("Ge", gePatterns)).toBe(true);
+      expect(isGEPost("gE", gePatterns)).toBe(true);
+    });
+
+    test("should require word boundaries", () => {
+      expect(isGEPost("agen is not a greeting", gePatterns)).toBe(false);
+      expect(isGEPost("vegeta", gePatterns)).toBe(false);
+    });
+
+    test("should not detect GM posts", () => {
+      expect(isGEPost("gm everyone", gePatterns)).toBe(false);
+      expect(isGEPost("good morning", gePatterns)).toBe(false);
+    });
+
+    test("should handle emoji and special characters", () => {
+      expect(isGEPost("ge 🌆", gePatterns)).toBe(true);
+      expect(isGEPost("🌇 good evening!", gePatterns)).toBe(true);
+    });
+  });
+
+  describe("isHBDPost", () => {
+    test("should detect 'hbd' as HBD post", () => {
+      expect(isHBDPost("hbd everyone!", hbdPatterns)).toBe(true);
+      expect(isHBDPost("HBD fam", hbdPatterns)).toBe(true);
+      expect(isHBDPost("hbd to you!", hbdPatterns)).toBe(true);
+    });
+
+    test("should detect 'happy birthday' as HBD post", () => {
+      expect(isHBDPost("happy birthday friend", hbdPatterns)).toBe(true);
+      expect(isHBDPost("Happy Birthday everyone!", hbdPatterns)).toBe(true);
+    });
+
+    test("should detect 'happy bday' as HBD post", () => {
+      expect(isHBDPost("happy bday!", hbdPatterns)).toBe(true);
+      expect(isHBDPost("Happy Bday friend", hbdPatterns)).toBe(true);
+    });
+
+    test("should be case insensitive", () => {
+      expect(isHBDPost("HBD", hbdPatterns)).toBe(true);
+      expect(isHBDPost("Hbd", hbdPatterns)).toBe(true);
+      expect(isHBDPost("hBd", hbdPatterns)).toBe(true);
+    });
+
+    test("should require word boundaries", () => {
+      expect(isHBDPost("neighborhood", hbdPatterns)).toBe(false);
+    });
+
+    test("should not detect GM posts", () => {
+      expect(isHBDPost("gm everyone", hbdPatterns)).toBe(false);
+      expect(isHBDPost("good morning", hbdPatterns)).toBe(false);
+    });
+
+    test("should handle emoji and special characters", () => {
+      expect(isHBDPost("hbd 🎂", hbdPatterns)).toBe(true);
+      expect(isHBDPost("🎉 happy birthday!", hbdPatterns)).toBe(true);
+      expect(isHBDPost("happy birthday 🎊🎁", hbdPatterns)).toBe(true);
+    });
+
+    test("should detect various birthday phrases", () => {
+      expect(isHBDPost("birthday vibes", hbdPatterns)).toBe(true);
+      expect(isHBDPost("level up today", hbdPatterns)).toBe(true);
+      expect(isHBDPost("another trip around the sun", hbdPatterns)).toBe(true);
     });
   });
 });

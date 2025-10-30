@@ -65,31 +65,7 @@ export const gaForeignGreetingsWeighted = [
   { text: "afternoon vibes!", weight: 10 },
 ];
 
-// Use same base name and suffix weights as GM
-export const gaBaseNameWeighted = [
-  { text: "authorName", weight: 50 },
-  { text: "friend", weight: 21 },
-  { text: "fam", weight: 7 },
-  { text: "fren", weight: 7 },
-  { text: "anon", weight: 5 },
-  { text: "mf", weight: 5 },
-  { text: "reatrd", weight: 3 },
-  { text: "retard", weight: 2 },
-];
-
-export const gaNameSuffixesWeighted = [
-  { text: "", weight: 70 },
-  { text: "-chan", weight: 8 },
-  { text: "-san", weight: 5 },
-  { text: "-sama", weight: 3 },
-  { text: "-senpai", weight: 4 },
-  { text: "-tan", weight: 3 },
-  { text: "-dono", weight: 2 },
-  { text: "-nyan", weight: 5 },
-];
-
-export const gaAfternoonEmojis = ["🌤️", "☀️", "🌞", "😊", "🫂", "🥰"];
-export const gaGestureEmojis = ["👋", "🙋🏻‍♂️", "👊🏼", "✌🏼", "🤜🏼🤛🏼"];
+// Note: baseNameWeighted, nameSuffixesWeighted, and emojis moved to CONFIG in like.ts
 
 export const gaHustlePhrases = [
   "keep going!",

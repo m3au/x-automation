@@ -1,5 +1,5 @@
 /**
- * Post detection utilities for identifying GM, GN, and GA posts
+ * Post detection utilities for identifying GM, GN, GA, GE, and HBD posts
  */
 
 /**
@@ -42,4 +42,32 @@ export function isGAPost(
     .join("|");
   const gaPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return gaPattern.test(postText);
+}
+
+/**
+ * Checks if a post is a GE (Good Evening) post
+ */
+export function isGEPost(
+  postText: string,
+  patterns: readonly string[]
+): boolean {
+  const escapedPatterns = patterns
+    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
+    .join("|");
+  const gePattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
+  return gePattern.test(postText);
+}
+
+/**
+ * Checks if a post is a HBD (Happy Birthday) post
+ */
+export function isHBDPost(
+  postText: string,
+  patterns: readonly string[]
+): boolean {
+  const escapedPatterns = patterns
+    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
+    .join("|");
+  const hbdPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
+  return hbdPattern.test(postText);
 }

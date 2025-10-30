@@ -3,130 +3,36 @@
  * Browser console script for automated liking with human-like behavior
  */
 
+import { CONFIG, type ScrollOptions } from "./config";
+import {
+  checkForAutomationWarning,
+  checkForDeletedPost,
+  findAllLikeButtons,
+  getButtonUniqueId,
+  isButtonAlreadyLiked,
+  isLikeButtonDisabled,
+  isOldVersionPost,
+  isReplyPost,
+} from "./dom-utils";
 import {
   isGAPost as detectGAPost,
+  isGEPost as detectGEPost,
   isGMPost as detectGMPost,
   isGNPost as detectGNPost,
+  isHBDPost as detectHBDPost,
 } from "./post-detector";
 import {
-  gaBaseNameWeighted,
-  gaForeignGreetingsWeighted,
-  gaGreetingsWeighted,
-  gaHustlePhrases,
-  gaNameSuffixesWeighted,
-  gaPatterns,
-  gaWeekdayPhrases,
-} from "./ga-patterns";
-import {
-  gmBaseNameWeighted,
-  gmBuildingPhrases,
-  gmForeignGreetingsWeighted,
-  gmGreetingsWeighted,
-  gmNameSuffixesWeighted,
-  gmPatterns,
-  gmWeekdayPhrases,
-} from "./gm-patterns";
-import {
-  gnBaseNameWeighted,
-  gnForeignGreetingsWeighted,
-  gnGreetingsWeighted,
-  gnNameSuffixesWeighted,
-  gnPatterns,
-  gnRestingPhrases,
-  gnWeekdayPhrases,
-} from "./gn-patterns";
+  generateGAReply,
+  generateGEReply,
+  generateGMReply,
+  generateGNReply,
+  generateHBDReply,
+  generateSayItBackReply,
+  hasSayItBack,
+} from "./reply-generators";
 
 (function () {
   "use strict";
-
-  // ============================================
-  // TIMING CONFIGURATION - Anti-detection mode
-  // ============================================
-  const CONFIG = {
-    // Automation settings
-    defaultPostLimit: 300, // Number of posts to like per run
-    skipOwnPosts: true, // Skip your own posts
-    ownUsername: "m3aus", // Your username handle (with or without @)
-
-    // Reading delays (varied speeds to look human)
-    readingSpeed: { min: 250, max: 500 }, // Wide range WPM
-    delayPerChar: { min: 15, max: 50 }, // More variation
-    baseDelay: { min: 1500, max: 3000 }, // 1.5-5s much wider range
-
-    // Media consumption (more realistic viewing times)
-    imageTime: { min: 1000, max: 5000 }, // 2-8s look at images
-    videoTime: { min: 3000, max: 12000 }, // 3-12s watch videos (fallback)
-    videoWatchPercentage: { min: 0.3, max: 1 }, // Watch 30-100% of video
-
-    // GM post detection patterns (imported from gm-patterns.ts)
-    gmPatterns: gmPatterns as readonly string[],
-
-    // GN post detection patterns (imported from gn-patterns.ts)
-    gnPatterns: gnPatterns as readonly string[],
-
-    // GA post detection patterns (imported from ga-patterns.ts)
-    gaPatterns: gaPatterns as readonly string[],
-
-    // Micro variations (bigger randomness)
-    microAdjustment: 4000, // ±2s random variation
-
-    // Click timing (add hesitation)
-    beforeClick: { min: 500, max: 2000 }, // 0.5-2s think before click
-    afterClick: { min: 800, max: 2500 }, // 0.8-2.5s after click
-
-    // Scroll timing (slower, more natural)
-    scrollDelay: { min: 1000, max: 2500 }, // 1-2.5s pause after scroll
-    scrollSearch: { min: 1500, max: 3000 }, // 1.5-3s search pauses
-
-    // Visibility checks
-    visibilityWait: 3000, // 3s resume after tab switch
-    maxVisibilityWait: 900000, // 15min max
-    visibilityCheckInterval: 2000, // Check every 2s
-
-    // Other (slower, safer)
-    initialDelay: 2000, // 2s start delay
-    noButtonsMaxAttempts: 12, // More retries
-    maxInitialScrollAttempts: 15, // More initial scrolls
-
-    // Reply generation probabilities
-    replyChances: {
-      foreignGreeting: 0.05, // 5% chance for foreign greeting
-      standaloneGreeting: 0.45, // 45% chance for greeting without name
-      emojiInGreeting: 0.4, // 40% chance to add emoji to standalone greeting
-      includePhrase: 0.1, // 10% chance to include phrase in full reply (vs just greeting + name)
-      weekdayPhrase: 0.2, // 20% chance to use weekday-specific phrase
-      emojiAtEnd: 0.3, // 30% chance to add emoji at end of full reply
-    },
-
-    // Reply typing/interaction delays
-    replyDelays: {
-      beforeReplyClick: { min: 500, max: 1500 }, // Delay before clicking reply button
-      waitForReplyBox: { min: 2000, max: 4000 }, // Wait for reply modal to open
-      afterFocus: { min: 300, max: 500 }, // Delay after focusing text editor
-      perCharacter: { min: 50, max: 150 }, // Typing speed per character
-      beforeSend: { min: 500, max: 1500 }, // Delay before clicking send
-      waitForModalClose: { min: 1500, max: 3000 }, // Wait for modal to auto-close
-      escapeKeyFallback: { min: 500, max: 1000 }, // Delay after escape key press
-    },
-
-    // Behavior patterns (probabilities for randomDelay)
-    behaviorPatterns: {
-      quickScroll: 0.2, // 10% chance for quick scroll-through
-      interestedReading: 0.25, // 25% cumulative (15% actual) for interested reading
-      distracted: 0.25, // 35% cumulative (10% actual) for distracted behavior
-      veryEngaged: 0.4, // 40% cumulative (5% actual) for very engaged
-      // Remaining 60% = normal behavior
-    },
-
-    // Scroll behavior
-    scrollOvershotChance: 0.3, // 30% chance of overshooting and correcting
-  };
-
-  interface ScrollOptions {
-    variation?: "quick" | "normal" | "careful";
-    maxDuration?: number;
-    shouldOvershoot?: boolean;
-  }
 
   interface WindowWithAutomation extends Window {
     likeCurrentUserPosts: (limit?: number) => void;
@@ -155,435 +61,26 @@ import {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
-  const sunEmojis = ["☀️", "🌞", "🌅", "😇", "🫂", "🥰"];
-  const gestureEmojis = ["👋", "🙋🏻‍♂️", "👊🏼", "✌🏼", "🤜🏼🤛🏼"];
-
-  // Weighted random selection helpers
-  function selectWeightedGreeting(): string {
-    const totalWeight = gmGreetingsWeighted.reduce(
-      (sum, g) => sum + g.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-
-    for (const greeting of gmGreetingsWeighted) {
-      random -= greeting.weight;
-      if (random <= 0) {
-        return greeting.text;
-      }
-    }
-
-    return gmGreetingsWeighted[0].text;
+  function isGMPost(postText: string): boolean {
+    return detectGMPost(postText, CONFIG.gmPatterns);
   }
 
-  function selectWeightedForeignGreeting(): string {
-    const totalWeight = gmForeignGreetingsWeighted.reduce(
-      (sum, f) => sum + f.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-
-    for (const foreign of gmForeignGreetingsWeighted) {
-      random -= foreign.weight;
-      if (random <= 0) {
-        return foreign.text;
-      }
-    }
-
-    return gmForeignGreetingsWeighted[0].text;
+  function isGNPost(postText: string): boolean {
+    return detectGNPost(postText, CONFIG.gnPatterns);
   }
 
-  function selectWeightedBaseName(): string {
-    const totalWeight = gmBaseNameWeighted.reduce(
-      (sum, b) => sum + b.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-
-    for (const baseName of gmBaseNameWeighted) {
-      random -= baseName.weight;
-      if (random <= 0) {
-        return baseName.text;
-      }
-    }
-
-    return gmBaseNameWeighted[0].text;
+  function isGAPost(postText: string): boolean {
+    return detectGAPost(postText, CONFIG.gaPatterns);
   }
 
-  function selectWeightedSuffix(): string {
-    const totalWeight = gmNameSuffixesWeighted.reduce(
-      (sum, s) => sum + s.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-
-    for (const suffix of gmNameSuffixesWeighted) {
-      random -= suffix.weight;
-      if (random <= 0) {
-        return suffix.text;
-      }
-    }
-
-    return gmNameSuffixesWeighted[0].text;
+  function isGEPost(postText: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+    return detectGEPost(postText, CONFIG.gePatterns);
   }
 
-  // Weighted selection helpers for GN
-  function selectWeightedGNGreeting(): string {
-    const totalWeight = gnGreetingsWeighted.reduce(
-      (sum, g) => sum + g.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    for (const greeting of gnGreetingsWeighted) {
-      random -= greeting.weight;
-      if (random <= 0) {
-        return greeting.text;
-      }
-    }
-    return gnGreetingsWeighted[0].text;
-  }
-
-  function selectWeightedGNForeignGreeting(): string {
-    const totalWeight = gnForeignGreetingsWeighted.reduce(
-      (sum, f) => sum + f.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    for (const foreign of gnForeignGreetingsWeighted) {
-      random -= foreign.weight;
-      if (random <= 0) {
-        return foreign.text;
-      }
-    }
-    return gnForeignGreetingsWeighted[0].text;
-  }
-
-  // Weighted selection helpers for GA
-  function selectWeightedGAGreeting(): string {
-    const totalWeight = gaGreetingsWeighted.reduce(
-      (sum, g) => sum + g.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    for (const greeting of gaGreetingsWeighted) {
-      random -= greeting.weight;
-      if (random <= 0) {
-        return greeting.text;
-      }
-    }
-    return gaGreetingsWeighted[0].text;
-  }
-
-  function selectWeightedGAForeignGreeting(): string {
-    const totalWeight = gaForeignGreetingsWeighted.reduce(
-      (sum, f) => sum + f.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    for (const foreign of gaForeignGreetingsWeighted) {
-      random -= foreign.weight;
-      if (random <= 0) {
-        return foreign.text;
-      }
-    }
-    return gaForeignGreetingsWeighted[0].text;
-  }
-
-  function generateGMReply(authorName: string): string {
-    // Chance for foreign greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.foreignGreeting) {
-      return selectWeightedForeignGreeting();
-    }
-
-    // Pick greeting using weighted selection
-    const greeting = selectWeightedGreeting();
-
-    // Chance to return just the greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.standaloneGreeting) {
-      // Chance to add emoji to standalone greeting
-      if (Math.random() < CONFIG.replyChances.emojiInGreeting) {
-        const emojiRoll = Math.random();
-        if (emojiRoll < 0.7) {
-          const sunEmoji =
-            sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-          return `${greeting} ${sunEmoji}`;
-        } else {
-          const gestureEmoji =
-            gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-          return `${greeting} ${gestureEmoji}`;
-        }
-      }
-      return greeting;
-    }
-
-    // Get first word of author name (no @)
-    const firstName = authorName.split(/\s+/)[0];
-
-    // Select base name (authorName, friend, fam, anon, mf)
-    const baseName = selectWeightedBaseName();
-    let finalName: string;
-
-    if (baseName === "authorName") {
-      // Use author's name and potentially add a suffix
-      const suffix = selectWeightedSuffix();
-      finalName = `${firstName}${suffix}`;
-    } else {
-      // Use replacement word without suffix
-      finalName = baseName;
-    }
-
-    // Build base reply: greeting + finalName
-    let reply = `${greeting} ${finalName}`;
-
-    // Chance to include phrase
-    if (Math.random() < CONFIG.replyChances.includePhrase) {
-      // Determine day of week (0 = Sunday, 1-6 = Mon-Sat)
-      const dayOfWeek = new Date().getDay();
-
-      // Pick phrase based on day
-      let phrase: string;
-      if (
-        gmWeekdayPhrases[dayOfWeek] &&
-        Math.random() < CONFIG.replyChances.weekdayPhrase
-      ) {
-        // Chance to use weekday-specific phrase
-        const dayPhrases = gmWeekdayPhrases[dayOfWeek];
-        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-      } else {
-        // Otherwise use generic building phrases
-        phrase =
-          gmBuildingPhrases[
-            Math.floor(Math.random() * gmBuildingPhrases.length)
-          ];
-      }
-
-      reply = `${reply}, ${phrase}`;
-    }
-
-    // Chance to add emoji at the end
-    if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
-      const emojiRoll = Math.random();
-      if (emojiRoll < 0.7) {
-        const sunEmoji =
-          sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-        reply = `${reply} ${sunEmoji}`;
-      } else {
-        const gestureEmoji =
-          gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-        reply = `${reply} ${gestureEmoji}`;
-      }
-    }
-
-    return reply;
-  }
-
-  function generateGNReply(authorName: string): string {
-    // Chance for foreign greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.foreignGreeting) {
-      return selectWeightedGNForeignGreeting();
-    }
-
-    // Pick greeting using weighted selection
-    const greeting = selectWeightedGNGreeting();
-
-    // Chance to return just the greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.standaloneGreeting) {
-      // Chance to add emoji to standalone greeting
-      if (Math.random() < CONFIG.replyChances.emojiInGreeting) {
-        const emojiRoll = Math.random();
-        if (emojiRoll < 0.7) {
-          const emoji = sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-          return `${greeting} ${emoji}`;
-        } else {
-          const emoji =
-            gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-          return `${greeting} ${emoji}`;
-        }
-      }
-      return greeting;
-    }
-
-    // Get first word of author name (no @)
-    const firstName = authorName.split(/\s+/)[0];
-
-    // Select base name
-    const totalWeight = gnBaseNameWeighted.reduce(
-      (sum, b) => sum + b.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    let baseName = "authorName";
-    for (const item of gnBaseNameWeighted) {
-      random -= item.weight;
-      if (random <= 0) {
-        baseName = item.text;
-        break;
-      }
-    }
-
-    let finalName: string;
-    if (baseName === "authorName") {
-      // Use author's name and potentially add a suffix
-      const suffixTotalWeight = gnNameSuffixesWeighted.reduce(
-        (sum, s) => sum + s.weight,
-        0
-      );
-      random = Math.random() * suffixTotalWeight;
-      let suffix = "";
-      for (const s of gnNameSuffixesWeighted) {
-        random -= s.weight;
-        if (random <= 0) {
-          suffix = s.text;
-          break;
-        }
-      }
-      finalName = `${firstName}${suffix}`;
-    } else {
-      finalName = baseName;
-    }
-
-    // Build base reply: greeting + finalName
-    let reply = `${greeting} ${finalName}`;
-
-    // Chance to include phrase
-    if (Math.random() < CONFIG.replyChances.includePhrase) {
-      // Determine day of week
-      const dayOfWeek = new Date().getDay();
-
-      // Pick phrase based on day
-      let phrase: string;
-      if (
-        gnWeekdayPhrases[dayOfWeek] &&
-        Math.random() < CONFIG.replyChances.weekdayPhrase
-      ) {
-        const dayPhrases = gnWeekdayPhrases[dayOfWeek];
-        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-      } else {
-        phrase =
-          gnRestingPhrases[Math.floor(Math.random() * gnRestingPhrases.length)];
-      }
-
-      reply = `${reply}, ${phrase}`;
-    }
-
-    // Chance to add emoji at the end
-    if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
-      const emojiRoll = Math.random();
-      if (emojiRoll < 0.7) {
-        const emoji = sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-        reply = `${reply} ${emoji}`;
-      } else {
-        const emoji =
-          gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-        reply = `${reply} ${emoji}`;
-      }
-    }
-
-    return reply;
-  }
-
-  function generateGAReply(authorName: string): string {
-    // Chance for foreign greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.foreignGreeting) {
-      return selectWeightedGAForeignGreeting();
-    }
-
-    // Pick greeting using weighted selection
-    const greeting = selectWeightedGAGreeting();
-
-    // Chance to return just the greeting (standalone)
-    if (Math.random() < CONFIG.replyChances.standaloneGreeting) {
-      // Chance to add emoji to standalone greeting
-      if (Math.random() < CONFIG.replyChances.emojiInGreeting) {
-        const emojiRoll = Math.random();
-        if (emojiRoll < 0.7) {
-          const emoji = sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-          return `${greeting} ${emoji}`;
-        } else {
-          const emoji =
-            gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-          return `${greeting} ${emoji}`;
-        }
-      }
-      return greeting;
-    }
-
-    // Get first word of author name (no @)
-    const firstName = authorName.split(/\s+/)[0];
-
-    // Select base name
-    const totalWeight = gaBaseNameWeighted.reduce(
-      (sum, b) => sum + b.weight,
-      0
-    );
-    let random = Math.random() * totalWeight;
-    let baseName = "authorName";
-    for (const item of gaBaseNameWeighted) {
-      random -= item.weight;
-      if (random <= 0) {
-        baseName = item.text;
-        break;
-      }
-    }
-
-    let finalName: string;
-    if (baseName === "authorName") {
-      const suffixTotalWeight = gaNameSuffixesWeighted.reduce(
-        (sum, s) => sum + s.weight,
-        0
-      );
-      random = Math.random() * suffixTotalWeight;
-      let suffix = "";
-      for (const s of gaNameSuffixesWeighted) {
-        random -= s.weight;
-        if (random <= 0) {
-          suffix = s.text;
-          break;
-        }
-      }
-      finalName = `${firstName}${suffix}`;
-    } else {
-      finalName = baseName;
-    }
-
-    // Build base reply: greeting + finalName
-    let reply = `${greeting} ${finalName}`;
-
-    // Chance to include phrase
-    if (Math.random() < CONFIG.replyChances.includePhrase) {
-      // Determine day of week
-      const dayOfWeek = new Date().getDay();
-
-      // Pick phrase based on day
-      let phrase: string;
-      if (
-        gaWeekdayPhrases[dayOfWeek] &&
-        Math.random() < CONFIG.replyChances.weekdayPhrase
-      ) {
-        const dayPhrases = gaWeekdayPhrases[dayOfWeek];
-        phrase = dayPhrases[Math.floor(Math.random() * dayPhrases.length)];
-      } else {
-        phrase =
-          gaHustlePhrases[Math.floor(Math.random() * gaHustlePhrases.length)];
-      }
-
-      reply = `${reply}, ${phrase}`;
-    }
-
-    // Chance to add emoji at the end
-    if (Math.random() < CONFIG.replyChances.emojiAtEnd) {
-      const emojiRoll = Math.random();
-      if (emojiRoll < 0.7) {
-        const emoji = sunEmojis[Math.floor(Math.random() * sunEmojis.length)];
-        reply = `${reply} ${emoji}`;
-      } else {
-        const emoji =
-          gestureEmojis[Math.floor(Math.random() * gestureEmojis.length)];
-        reply = `${reply} ${emoji}`;
-      }
-    }
-
-    return reply;
+  function isHBDPost(postText: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+    return detectHBDPost(postText, CONFIG.hbdPatterns);
   }
 
   async function randomDelay(): Promise<void> {
@@ -653,233 +150,6 @@ import {
 
     console.log(`Waiting for ${Math.round(finalDelay / 1000)} seconds...`);
     return sleep(finalDelay);
-  }
-
-  function isReplyPost(article: HTMLElement): boolean {
-    // Only check for "Replying to" text - most reliable indicator
-    const socialContext = article.querySelector(
-      '[data-testid="socialContext"]'
-    );
-    if (socialContext?.textContent?.includes("Replying to")) {
-      return true;
-    }
-
-    return false;
-  }
-
-  function isOldVersionPost(article: HTMLElement): boolean {
-    // Check if post has "There's a new version of this post" text
-    const allText = article.textContent || "";
-    return allText.includes("There's a new version of this post");
-  }
-
-  function isGMPost(postText: string): boolean {
-    return detectGMPost(postText, CONFIG.gmPatterns);
-  }
-
-  function isGNPost(postText: string): boolean {
-    return detectGNPost(postText, CONFIG.gnPatterns);
-  }
-
-  function isGAPost(postText: string): boolean {
-    return detectGAPost(postText, CONFIG.gaPatterns);
-  }
-
-  function isLikeButtonDisabled(button: HTMLElement): boolean {
-    // Check if the SVG inside the button has the "disabled" class
-    const svg = button.querySelector("svg");
-    if (svg && svg.classList.contains("r-12c3ph5")) {
-      return true;
-    }
-    return false;
-  }
-
-  function isButtonAlreadyLiked(button: HTMLElement): boolean {
-    if (button.getAttribute("data-testid") === "unlike") {
-      return true;
-    }
-
-    if (button.closest('[data-testid="unlike"]') !== null) {
-      return true;
-    }
-
-    const article = button.closest("article");
-    if (article) {
-      const unlikeInArticle = article.querySelector('[data-testid="unlike"]');
-      if (unlikeInArticle) {
-        return true;
-      }
-
-      const parentGroup = button.closest('[role="group"]');
-      if (parentGroup && parentGroup.querySelector('[data-testid="unlike"]')) {
-        return true;
-      }
-    }
-
-    const svgPaths = button.querySelectorAll("path");
-    for (const path of svgPaths) {
-      const fill = path.getAttribute("fill");
-      if (
-        fill &&
-        (fill.toLowerCase() === "#f91880" ||
-          fill.toLowerCase() === "rgb(249, 24, 128)")
-      ) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  function findAllLikeButtons(): HTMLElement[] {
-    const allArticles = Array.from(document.querySelectorAll("article"));
-    const likeButtons: HTMLElement[] = [];
-    const alreadyLikedButtons: HTMLElement[] = [];
-
-    for (const article of allArticles) {
-      if (article.querySelector('[data-testid="unlike"]')) {
-        continue;
-      }
-
-      // Skip old versions of edited posts
-      if (isOldVersionPost(article)) {
-        continue;
-      }
-
-      let foundButton: HTMLElement | null = null;
-
-      const interactionArea = article.querySelector('[role="group"]');
-      if (interactionArea) {
-        const buttons = Array.from(
-          interactionArea.querySelectorAll<HTMLElement>("button")
-        );
-        if (buttons.length >= 3) {
-          const potentialLikeButton = buttons[2];
-          if (
-            !isButtonAlreadyLiked(potentialLikeButton) &&
-            !isLikeButtonDisabled(potentialLikeButton)
-          ) {
-            foundButton = potentialLikeButton;
-          }
-        }
-      }
-
-      if (!foundButton) {
-        const directLikeButton = article.querySelector<HTMLElement>(
-          '[data-testid="like"]'
-        );
-        if (
-          directLikeButton &&
-          !isButtonAlreadyLiked(directLikeButton) &&
-          !isLikeButtonDisabled(directLikeButton)
-        ) {
-          foundButton = directLikeButton;
-        }
-      }
-
-      if (!foundButton) {
-        const allButtons = Array.from(
-          article.querySelectorAll<HTMLElement>("button")
-        );
-        for (const button of allButtons) {
-          if (isButtonAlreadyLiked(button) || isLikeButtonDisabled(button))
-            continue;
-
-          const paths = button.querySelectorAll("path");
-          for (const path of paths) {
-            const d = path.getAttribute("d");
-            if (
-              d &&
-              (d.includes("16.697") ||
-                d.includes("M16.697") ||
-                d.includes("c-1.222") ||
-                d.includes("-3.89 2.16") ||
-                d.includes("5.5c-1.222") ||
-                (d.includes("heart") && !d.includes("bookmark")))
-            ) {
-              foundButton = button;
-              break;
-            }
-          }
-          if (foundButton) break;
-        }
-      }
-
-      if (foundButton) {
-        likeButtons.push(foundButton);
-      }
-    }
-
-    const allInteractionBars = document.querySelectorAll('[role="group"]');
-    for (const bar of allInteractionBars) {
-      if (!bar.closest("article")) continue;
-
-      if (bar.querySelector('[data-testid="unlike"]')) {
-        continue;
-      }
-
-      const barButtons = Array.from(
-        bar.querySelectorAll<HTMLElement>("button")
-      );
-      if (barButtons.length >= 3) {
-        const thirdButton = barButtons[2];
-
-        if (
-          likeButtons.includes(thirdButton) ||
-          alreadyLikedButtons.includes(thirdButton)
-        )
-          continue;
-
-        if (isButtonAlreadyLiked(thirdButton)) {
-          alreadyLikedButtons.push(thirdButton);
-          continue;
-        }
-
-        if (isLikeButtonDisabled(thirdButton)) {
-          continue;
-        }
-
-        if (thirdButton.textContent && /\d+/.test(thirdButton.textContent)) {
-          likeButtons.push(thirdButton);
-        } else {
-          const paths = thirdButton.querySelectorAll("path");
-          if (paths.length > 0) {
-            likeButtons.push(thirdButton);
-          }
-        }
-      }
-    }
-
-    console.log(`Found ${likeButtons.length} like buttons to process`);
-
-    likeButtons.sort((a, b) => {
-      const rectA = a.getBoundingClientRect();
-      const rectB = b.getBoundingClientRect();
-      return rectA.top - rectB.top;
-    });
-
-    return likeButtons;
-  }
-
-  function getButtonUniqueId(button: HTMLElement): string {
-    const article = button.closest("article");
-    if (!article) return button.outerHTML.substring(0, 100);
-
-    const socialContext = article.querySelector(
-      '[data-testid="socialContext"]'
-    );
-    const isPinned = socialContext?.textContent?.includes("Pinned") ?? false;
-
-    const idElement = article.querySelector('[data-testid="tweet"]');
-    const tweetId = idElement?.getAttribute("data-tweet-id") ?? "";
-
-    const tweetText =
-      article.querySelector<HTMLElement>('[data-testid="tweetText"]')
-        ?.textContent || "";
-    const textSample = tweetText.substring(0, 40);
-
-    // Don't use position - it changes when scrolling
-    return `${isPinned ? "pinned-" : ""}${tweetId}-${textSample}`;
   }
 
   async function humanLikeScroll(
@@ -966,78 +236,16 @@ import {
     const seenButtons = new Set<string>();
     const alreadyLikedSet = new Set<string>();
     let consecutiveNoNewButtons = 0;
+    let actionsSinceBreak = 0; // Track actions for breathing breaks
 
-    function checkForDeletedPost(): boolean {
-      const toastElements = document.querySelectorAll('[data-testid="toast"]');
-      for (const toast of toastElements) {
-        const toastText = toast.textContent || "";
-        if (
-          toastText.includes("post has been deleted") ||
-          toastText.includes("That post has been deleted") ||
-          toastText.includes("Sorry, that post")
-        ) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    function checkForAutomationWarning(): boolean {
-      const toastElements = document.querySelectorAll('[data-testid="toast"]');
-      for (const toast of toastElements) {
-        const toastText = toast.textContent || "";
-
-        // Ignore "post deleted" messages - these are normal and not automation warnings
-        if (
-          toastText.includes("post has been deleted") ||
-          toastText.includes("That post has been deleted") ||
-          toastText.includes("Sorry, that post")
-        ) {
-          console.log("ℹ️ Post deleted - continuing automation");
-          continue;
-        }
-
-        // Check for actual automation warnings
-        if (
-          toastText.includes("automated") ||
-          toastText.includes("spam") ||
-          toastText.includes("malicious") ||
-          toastText.includes("protect our users")
-        ) {
-          console.log(
-            "⚠️ CRITICAL WARNING: Twitter automation detection triggered!"
-          );
-          console.log("Toast message detected: " + toastText);
-          shouldStop = true;
-          return true;
-        }
-      }
-
-      const warningTexts = [
-        "This request looks like it might be automated",
-        "To protect our users from spam",
-        "we can't complete this action right now",
-        "Please try again later",
-        "You're unable to perform this action",
-      ];
-
-      const allTextElements = document.querySelectorAll("div, span, p");
-      for (const element of allTextElements) {
-        const text = element.textContent || "";
-        for (const warningText of warningTexts) {
-          if (text.includes(warningText)) {
-            console.log(
-              "⚠️ CRITICAL WARNING: Twitter automation alert detected!"
-            );
-            console.log("Warning text found: " + text);
-            shouldStop = true;
-            return true;
-          }
-        }
-      }
-
-      return false;
-    }
+    // Randomize first break point
+    let nextBreakAt =
+      CONFIG.breathingBreak.afterActions.min +
+      Math.floor(
+        Math.random() *
+          (CONFIG.breathingBreak.afterActions.max -
+            CONFIG.breathingBreak.afterActions.min)
+      );
 
     // Function to check if document is visible
     function isDocumentVisible(): boolean {
@@ -1200,6 +408,7 @@ import {
 
     while (processedCount < limit && !shouldStop) {
       if (checkForAutomationWarning()) {
+        shouldStop = true;
         return;
       }
 
@@ -1297,13 +506,16 @@ import {
           post.tagName.toLowerCase() === "article" &&
           isOldVersionPost(post)
         ) {
-          console.log("⚠️ Old version of edited post - skipping");
+          console.log("⚠️ Old version of edited post - skipping...");
           continue;
         }
 
         let isGM = false;
         let isGN = false;
         let isGA = false;
+        let isGE = false;
+        let isHBD = false;
+        let postText = ""; // Store post text for reply generation
 
         if (post && post.tagName.toLowerCase() === "article") {
           const rect = post.getBoundingClientRect();
@@ -1314,16 +526,22 @@ import {
           const hasImage =
             !hasVideo && !!post.querySelector('[data-testid="tweetPhoto"]');
 
-          // Check if this is a GM/GA/GN post (but not a reply)
-          const postText =
+          // Check if this is a GM/GA/GN/GE/HBD post (but not a reply)
+          postText =
             post.querySelector('[data-testid="tweetText"]')?.textContent || "";
           if (!isReplyPost(post)) {
-            if (isGMPost(postText)) {
+            if (isHBDPost(postText)) {
+              console.log("🎂 This is a HBD post");
+              isHBD = true;
+            } else if (isGMPost(postText)) {
               console.log("☀️ This is a GM post");
               isGM = true;
             } else if (isGAPost(postText)) {
               console.log("🌤️ This is a GA post");
               isGA = true;
+            } else if (isGEPost(postText)) {
+              console.log("🌆 This is a GE post");
+              isGE = true;
             } else if (isGNPost(postText)) {
               console.log("🌙 This is a GN post");
               isGN = true;
@@ -1336,8 +554,8 @@ import {
               Math.random() * (CONFIG.scrollDelay.max - CONFIG.scrollDelay.min)
           );
 
-          // Add extra viewing time for visual content (skip for GM/GN/GA posts - we'll reply instead)
-          if (isGM || isGN || isGA) {
+          // Add extra viewing time for visual content (skip for GM/GN/GA/GE/HBD posts - we'll reply instead)
+          if (isGM || isGN || isGA || isGE || isHBD) {
             console.log("⚡ Special post - skipping media wait time");
           } else if (hasVideo) {
             const videoElement = post.querySelector(
@@ -1383,10 +601,13 @@ import {
           }
         }
 
-        await sleep(
-          CONFIG.beforeClick.min +
-            Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
-        );
+        // Skip "thinking" delay for GM/GN/GA/GE/HBD posts since we're replying
+        if (!(isGM || isGN || isGA || isGE || isHBD)) {
+          await sleep(
+            CONFIG.beforeClick.min +
+              Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
+          );
+        }
 
         // Get author display name and username handle
         let authorName = "Unknown";
@@ -1433,17 +654,21 @@ import {
             Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min)
         );
 
-        // If it's a GM/GN/GA post, click reply and compose response
+        // If it's a GM/GN/GA/GE/HBD post, click reply and compose response
         if (
-          (isGM || isGN || isGA) &&
+          (isGM || isGN || isGA || isGE || isHBD) &&
           post &&
           post.tagName.toLowerCase() === "article"
         ) {
           let postType: string;
-          if (isGM) {
+          if (isHBD) {
+            postType = "HBD";
+          } else if (isGM) {
             postType = "GM";
           } else if (isGN) {
             postType = "GN";
+          } else if (isGE) {
+            postType = "GE";
           } else {
             postType = "GA";
           }
@@ -1479,14 +704,25 @@ import {
 
               // Generate appropriate reply
               let reply: string;
-              if (isGM) {
-                reply = generateGMReply(authorName);
+
+              // Check for "say it back" prompt
+              if (hasSayItBack(postText)) {
+                reply = generateSayItBackReply(postText);
+                console.log(`💬 Generated "Say it back" reply: "${reply}"`);
+              } else if (isHBD) {
+                reply = generateHBDReply(authorName, postText);
+                console.log(`💬 Generated HBD reply: "${reply}"`);
+              } else if (isGM) {
+                reply = generateGMReply(authorName, postText);
                 console.log(`💬 Generated GM reply: "${reply}"`);
               } else if (isGN) {
-                reply = generateGNReply(authorName);
+                reply = generateGNReply(authorName, postText);
                 console.log(`💬 Generated GN reply: "${reply}"`);
+              } else if (isGE) {
+                reply = generateGEReply(authorName, postText);
+                console.log(`💬 Generated GE reply: "${reply}"`);
               } else {
-                reply = generateGAReply(authorName);
+                reply = generateGAReply(authorName, postText);
                 console.log(`💬 Generated GA reply: "${reply}"`);
               }
 
@@ -1613,6 +849,7 @@ import {
         }
 
         if (checkForAutomationWarning()) {
+          shouldStop = true;
           return;
         }
 
@@ -1627,6 +864,45 @@ import {
 
         // Always call randomDelay after liking a post
         await randomDelay();
+
+        // Increment action counter and check for breathing break
+        actionsSinceBreak++;
+        if (
+          CONFIG.breathingBreak.enabled &&
+          actionsSinceBreak >= nextBreakAt &&
+          processedCount < limit
+        ) {
+          const breakDuration =
+            CONFIG.breathingBreak.duration.min +
+            Math.random() *
+              (CONFIG.breathingBreak.duration.max -
+                CONFIG.breathingBreak.duration.min);
+
+          console.log(
+            `\n💤 Taking a breathing break after ${actionsSinceBreak} actions...`
+          );
+          console.log(
+            `⏰ Break duration: ${Math.round(breakDuration / 60000)} minutes`
+          );
+          console.log(
+            `📊 Progress: ${processedCount}/${limit} posts completed\n`
+          );
+
+          await sleep(breakDuration);
+
+          console.log("✅ Break complete - resuming automation...\n");
+
+          // Reset counter and randomize next break point
+          actionsSinceBreak = 0;
+          nextBreakAt =
+            CONFIG.breathingBreak.afterActions.min +
+            Math.floor(
+              Math.random() *
+                (CONFIG.breathingBreak.afterActions.max -
+                  CONFIG.breathingBreak.afterActions.min)
+            );
+          console.log(`📅 Next break scheduled in ~${nextBreakAt} actions`);
+        }
       } catch (error) {
         console.error("Error processing like button:", error);
       }

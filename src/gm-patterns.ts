@@ -78,33 +78,7 @@ export const gmForeignGreetingsWeighted = [
   { text: "hey there!", weight: 10 },
 ];
 
-// Base name selection (use author name, or replace with these)
-export const gmBaseNameWeighted = [
-  { text: "authorName", weight: 50 }, // Use actual author name
-  { text: "friend", weight: 21 },
-  { text: "fam", weight: 7 },
-  { text: "fren", weight: 7 },
-  { text: "anon", weight: 5 },
-  { text: "mf", weight: 5 },
-  { text: "reatrd", weight: 3 },
-  { text: "retard", weight: 2 },
-];
-
-// Suffixes to add to author name (only applied when base is "authorName")
-export const gmNameSuffixesWeighted = [
-  { text: "", weight: 66 }, // No suffix (most common)
-  { text: " legend", weight: 8 },
-  { text: "-chan", weight: 8 },
-  { text: "-san", weight: 5 },
-  { text: "-sama", weight: 3 },
-  { text: "-senpai", weight: 2 },
-  { text: "-tan", weight: 3 },
-  { text: "-dono", weight: 2 },
-  { text: "-nyan", weight: 3 },
-];
-
-export const gmSunEmojis = ["☀️", "🌞", "🌅", "😇", "🫂", "🥰"];
-export const gmGestureEmojis = ["👋", "🙋🏻‍♂️", "👊🏼", "✌🏼", "🤜🏼🤛🏼"];
+// Note: baseNameWeighted, nameSuffixesWeighted, and emojis moved to CONFIG in like.ts
 
 export const gmBuildingPhrases = [
   "let's go!",
