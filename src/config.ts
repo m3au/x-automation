@@ -154,7 +154,7 @@ export const CONFIG = {
     "❤️",
     "😎",
     "🙃",
-    "🫶",``
+    "🫶",
     "🍀",
     "🚀",
   ], // Morning emojis
