@@ -7,13 +7,13 @@ import {
   isGMPost,
   isGNPost,
   isHBDPost,
-} from "./post-detector";
+} from "../src/post-detector";
 
-import { gaPatterns } from "./ga-patterns";
-import { gePatterns } from "./ge-patterns";
-import { gmPatterns } from "./gm-patterns";
-import { gnPatterns } from "./gn-patterns";
-import { hbdPatterns } from "./hbd-patterns";
+import { gaPatterns } from "../src/ga-patterns";
+import { gePatterns } from "../src/ge-patterns";
+import { gmPatterns } from "../src/gm-patterns";
+import { gnPatterns } from "../src/gn-patterns";
+import { hbdPatterns } from "../src/hbd-patterns";
 
 describe("Post Detection", () => {
   describe("isGMPost", () => {
@@ -197,8 +197,9 @@ describe("Post Detection", () => {
 
     test("should detect various birthday phrases", () => {
       expect(isHBDPost("birthday vibes", hbdPatterns)).toBe(true);
-      expect(isHBDPost("level up today", hbdPatterns)).toBe(true);
       expect(isHBDPost("another trip around the sun", hbdPatterns)).toBe(true);
+      expect(isHBDPost("new age unlocked", hbdPatterns)).toBe(true);
+      expect(isHBDPost("age up", hbdPatterns)).toBe(true);
     });
   });
 });

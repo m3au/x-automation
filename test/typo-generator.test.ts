@@ -2,7 +2,7 @@
 // @ts-expect-error - Bun test types
 import { describe, expect, test } from "bun:test";
 
-import { introduceTypo } from "./typo-generator";
+import { introduceTypo } from "../src/typo-generator";
 
 describe("Typo Generator", () => {
   describe("introduceTypo", () => {
@@ -238,3 +238,4 @@ describe("Typo Generator", () => {
     });
   });
 });
+

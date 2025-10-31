@@ -94,6 +94,17 @@ export const gmBuildingPhrases = [
   "have an amazing day!",
   "have a wonderful day!",
   "have an excellent day!",
+  "blasted day!",
+  "have an epic day!",
+  "have a legendary day!",
+  "have a fantastic day!",
+  "have an incredible day!",
+  "have a phenomenal day!",
+  "have a magnificent day!",
+  "have a glorious day!",
+  "have a beautiful day!",
+  "have a lovely day!",
+  "have a very productive day!",
 ];
 
 // Weekday-specific phrases (0=Sunday, 1=Monday through 6=Saturday)
@@ -109,6 +120,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed Sunday!",
     "have a wonderful Sunday!",
     "have an excellent Sunday!",
+    "have a blasted Sunday!",
   ],
   1: [
     "monday grind!",
@@ -119,6 +131,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed start of the week!",
     "have a wonderful start of the week!",
     "have an excellent start of the week!",
+    "have a blasted start of the week!",
   ],
   2: [
     "taco tuesday!",
@@ -129,6 +142,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed tuesday!",
     "have a wonderful tuesday!",
     "have an excellent tuesday!",
+    "have a blasted tuesday!",
   ],
   3: [
     "wednesday hustle!",
@@ -139,6 +153,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed wednesday!",
     "have a wonderful wednesday!",
     "have an excellent wednesday!",
+    "have a blasted wednesday!",
   ],
   4: [
     "thursday momentum!",
@@ -149,6 +164,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed thursday!",
     "have a wonderful thursday!",
     "have an excellent thursday!",
+    "have a blasted thursday!",
   ],
   5: [
     "friday feeling!",
@@ -159,6 +175,7 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed friday!",
     "have a wonderful friday!",
     "have an excellent friday!",
+    "have a blasted friday!",
   ],
   6: [
     "saturday grind!",
@@ -170,5 +187,6 @@ export const gmWeekdayPhrases: { [key: number]: string[] } = {
     "have a blessed weekend!",
     "have a wonderful weekend!",
     "have an excellent weekend!",
+    "have a blasted weekend!",
   ],
 };

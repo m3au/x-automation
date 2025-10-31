@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // @ts-expect-error - Bun test types
 import { describe, expect, test } from "bun:test";
-import { detectKeywordToEcho, detectWeekdayInPost } from "./reply-helpers";
+import { detectKeywordToEcho, detectWeekdayInPost } from "../src/reply-helpers";
 
 describe("Reply Helpers", () => {
   describe("detectKeywordToEcho", () => {

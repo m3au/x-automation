@@ -1,9 +1,0 @@
-# CSpell ignore file for x-automation package
-
-# GM patterns file contains many non-English words and slang
-src/gm-patterns.ts
-
-# Build outputs
-dist/
-node_modules/
-

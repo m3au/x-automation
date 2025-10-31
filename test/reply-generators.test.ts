@@ -5,7 +5,7 @@ import {
   generateSayItBackReply,
   hasSayItBack,
   normalizeAuthorName,
-} from "./reply-generators";
+} from "../src/reply-generators";
 
 describe("Reply Generators", () => {
   describe("normalizeAuthorName", () => {

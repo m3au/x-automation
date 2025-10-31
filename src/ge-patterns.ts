@@ -79,6 +79,7 @@ export const geWindDownPhrases = [
   "have an amazing evening!",
   "have a wonderful evening!",
   "have a blessed evening!",
+  "have a cozy evening!",
 ];
 
 // Weekday-specific phrases (0=Sunday through 6=Saturday)
@@ -90,6 +91,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a peaceful Sunday evening!",
     "have a blessed Sunday evening!",
     "have a wonderful Sunday evening!",
+    "have a cozy Sunday evening!",
   ],
   1: [
     "monday evening!",
@@ -98,6 +100,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a good evening!",
     "have an amazing evening!",
     "have a wonderful evening!",
+    "have a cozy evening!",
   ],
   2: [
     "tuesday evening!",
@@ -106,6 +109,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a good evening!",
     "have an amazing evening!",
     "have a wonderful evening!",
+    "have a cozy evening!",
   ],
   3: [
     "hump day evening!",
@@ -114,6 +118,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a good evening!",
     "have an amazing evening!",
     "have a wonderful evening!",
+    "have a cozy evening!",
   ],
   4: [
     "thursday evening!",
@@ -122,6 +127,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a good evening!",
     "have an amazing evening!",
     "have a wonderful evening!",
+    "have a cozy evening!",
   ],
   5: [
     "friday evening!",
@@ -130,6 +136,7 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a great friday evening!",
     "have an amazing friday evening!",
     "have a wonderful friday evening!",
+    "have a cozy friday evening!",
   ],
   6: [
     "saturday evening!",
@@ -138,5 +145,6 @@ export const geWeekdayPhrases: { [key: number]: string[] } = {
     "have a great weekend evening!",
     "have an amazing weekend evening!",
     "have a wonderful weekend evening!",
+    "have a cozy weekend evening!",
   ],
 };

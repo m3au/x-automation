@@ -105,8 +105,8 @@ export function normalizeAuthorName(name: string): string {
 
   // Strip trailing/leading punctuation and termination characters FIRST
   // Remove: . , ; : ! ? - _ = + | / \ ( ) [ ] { } < > " ' ` ~ @ # $ % ^ & *
-  normalized = normalized.replace(
-    /^[.,;:!?\-_=+|/\\()\[\]{}<>"'`~@#$%^&*]+|[.,;:!?\-_=+|/\\()\[\]{}<>"'`~@#$%^&*]+$/g,
+  normalized = normalized.replaceAll(
+    /^[!"#$%&'()*+,./:;<=>?@[\\\]^_`{|}~-]+|[!"#$%&'()*+,./:;<=>?@[\\\]^_`{|}~-]+$/g,
     ""
   );
   normalized = normalized.trim();

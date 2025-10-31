@@ -10,7 +10,7 @@ import { hbdPatterns } from "./hbd-patterns";
 
 export const CONFIG = {
   // Automation settings
-  defaultPostLimit: 1000, // Number of posts to like per run
+  defaultPostLimit: 10, // Number of posts to like per run
   skipOwnPosts: true, // Skip your own posts
   ownUsername: "m3aus", // Your username handle (with or without @)
 
@@ -135,7 +135,7 @@ export const CONFIG = {
   // Dive into comments feature (occasionally like replies)
   diveIntoComments: {
     enabled: true,
-    chance: 1, // 100% chance to dive into a post's comments (FOR TESTING - set back to 0.15 for production)
+    chance: 1, // 100% chance to dive into a post's comments
     minRepliesToLike: 1,
     maxRepliesToLike: 10,
     waitForLoad: { min: 2000, max: 4000 }, // Wait for comments to load
