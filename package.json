@@ -19,7 +19,10 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "like": "bun build src/like.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/like.js && echo '✅ Built and copied like.js to clipboard!'",
+    "unmute": "bun build src/unmute.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/unmute.js && echo '✅ Built and copied unmute.js to clipboard!'",
+    "unfollow": "bun build src/unfollow-inactive.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/unfollow-inactive.js && echo '✅ Built and copied unfollow-inactive.js to clipboard!'"
   },
   "keywords": [
     "twitter",

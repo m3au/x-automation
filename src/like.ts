@@ -685,6 +685,7 @@ import {
     let processedCount = 0;
     const seenButtons = new Set<string>();
     const alreadyLikedSet = new Set<string>();
+    const undonePostsSet = new Set<string>(); // Track posts that had their likes undone
     let consecutiveNoNewButtons = 0;
     let actionsSinceBreak = 0; // Track actions for breathing breaks
 
@@ -770,6 +771,7 @@ import {
         return (
           !seenButtons.has(buttonId) &&
           !alreadyLikedSet.has(buttonId) &&
+          !undonePostsSet.has(buttonId) &&
           !isButtonAlreadyLiked(button)
         );
       });
@@ -879,6 +881,7 @@ import {
         return (
           !seenButtons.has(buttonId) &&
           !alreadyLikedSet.has(buttonId) &&
+          !undonePostsSet.has(buttonId) &&
           !isButtonAlreadyLiked(button)
         );
       });
@@ -1102,6 +1105,12 @@ import {
             );
             continue;
           }
+        }
+
+        // Check if post was deleted BEFORE trying to like
+        if (checkForDeletedPost()) {
+          console.log("ℹ️ Deleted post detected - skipping before like");
+          continue;
         }
 
         nextButtonToLike.click();
@@ -1342,9 +1351,46 @@ import {
 
         if (wasLikeUndone) {
           console.log(
-            "⚠️ WARNING: Like was automatically undone - stopping script"
+            "⚠️ WARNING: Like was automatically undone - post may be flagged for automation"
           );
-          return;
+          console.log("🚫 Adding post to skip list and taking a break...");
+          
+          // Add this post to the undone set so we don't try it again
+          undonePostsSet.add(buttonId);
+          
+          // Decrement processed count since this action was undone
+          processedCount--;
+          
+          // Take a 3-5 minute break before continuing
+          const breakDuration =
+            180000 + Math.random() * 120000; // 3-5 minutes (180000-300000ms)
+          
+          console.log(
+            `💤 Taking a ${Math.round(breakDuration / 60000)} minute safety break...`
+          );
+          console.log(
+            `📊 Progress: ${processedCount}/${limit} posts completed\n`
+          );
+          
+          await sleep(breakDuration);
+          
+          console.log("✅ Break complete - resuming automation...\n");
+          
+          // Click home icon to reset timeline
+          console.log("🏠 Clicking home icon to refresh timeline...");
+          const homeLink = document.querySelector<HTMLAnchorElement>(
+            'a[href="/home"][aria-label="Home"]'
+          );
+          if (homeLink) {
+            homeLink.click();
+            console.log("✅ Timeline refreshed");
+            await sleep(2000 + Math.random() * 2000); // Wait for timeline to load
+          } else {
+            console.log("⚠️ Could not find home icon, continuing anyway");
+          }
+          
+          // Continue to next post instead of stopping
+          continue;
         }
 
         // Always call randomDelay after liking a post

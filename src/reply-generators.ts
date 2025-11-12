@@ -128,6 +128,13 @@ export function normalizeAuthorName(name: string): string {
   // Final trim to remove any whitespace
   normalized = normalized.trim();
 
+  // If name is all caps, convert to only first letter capitalized
+  // e.g., "JOHN" → "John", "STRONGG" → "Strongg"
+  if (normalized.length >= 2 && normalized === normalized.toUpperCase()) {
+    // Name is all caps, convert to title case (only first letter caps)
+    normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+  }
+
   // If the name is now empty or too short, return empty (will trigger fallback)
   if (normalized.length < 2) {
     return "";

@@ -10,9 +10,9 @@ import {
 describe("Reply Generators", () => {
   describe("normalizeAuthorName", () => {
     test("should handle spaced-out names like 'H O L Y'", () => {
-      expect(normalizeAuthorName("H O L Y")).toBe("HOLY");
-      expect(normalizeAuthorName("M A X")).toBe("MAX");
-      expect(normalizeAuthorName("A B C D")).toBe("ABCD");
+      expect(normalizeAuthorName("H O L Y")).toBe("Holy");
+      expect(normalizeAuthorName("M A X")).toBe("Max");
+      expect(normalizeAuthorName("A B C D")).toBe("Abcd");
     });
 
     test("should preserve normal multi-word names", () => {
@@ -24,7 +24,7 @@ describe("Reply Generators", () => {
     test("should preserve single-word names", () => {
       expect(normalizeAuthorName("Alice")).toBe("Alice");
       expect(normalizeAuthorName("Bob")).toBe("Bob");
-      expect(normalizeAuthorName("HOLY")).toBe("HOLY");
+      expect(normalizeAuthorName("HOLY")).toBe("Holy"); // All caps becomes title case
     });
 
     test("should handle mixed cases in spaced-out names", () => {
@@ -34,15 +34,15 @@ describe("Reply Generators", () => {
     });
 
     test("should remove emojis before processing", () => {
-      expect(normalizeAuthorName("H 😊 O 🔥 L Y")).toBe("HOLY");
+      expect(normalizeAuthorName("H 😊 O 🔥 L Y")).toBe("Holy"); // All caps becomes title case
       expect(normalizeAuthorName("🔥 Alice 💪")).toBe("Alice");
       expect(normalizeAuthorName("☀️ John Smith 🌞")).toBe("John Smith");
     });
 
     test("should handle fancy Unicode characters", () => {
-      expect(normalizeAuthorName("Ｈ Ｏ Ｌ Ｙ")).toBe("HOLY");
-      expect(normalizeAuthorName("𝐇𝐎𝐋𝐘")).toBe("HOLY");
-      expect(normalizeAuthorName("𝓗𝓞𝓛𝓨")).toBe("HOLY");
+      expect(normalizeAuthorName("Ｈ Ｏ Ｌ Ｙ")).toBe("Holy"); // All caps becomes title case
+      expect(normalizeAuthorName("𝐇𝐎𝐋𝐘")).toBe("Holy"); // All caps becomes title case
+      expect(normalizeAuthorName("𝓗𝓞𝓛𝓨")).toBe("Holy"); // All caps becomes title case
     });
 
     test("should handle dotted names by taking only first part", () => {
@@ -107,24 +107,24 @@ describe("Reply Generators", () => {
       expect(normalizeAuthorName("")).toBe("");
       expect(normalizeAuthorName("   ")).toBe("");
       expect(normalizeAuthorName("A")).toBe(""); // Too short (< 2 chars)
-      expect(normalizeAuthorName("AB")).toBe("AB");
+      expect(normalizeAuthorName("AB")).toBe("Ab"); // All caps becomes title case
     });
 
     test("should trim whitespace", () => {
       expect(normalizeAuthorName("  Alice  ")).toBe("Alice");
-      expect(normalizeAuthorName("  H O L Y  ")).toBe("HOLY");
+      expect(normalizeAuthorName("  H O L Y  ")).toBe("Holy"); // All caps becomes title case
       expect(normalizeAuthorName("  John Smith  ")).toBe("John Smith");
     });
 
     test("should handle multiple spaces between letters", () => {
-      expect(normalizeAuthorName("H  O  L  Y")).toBe("HOLY");
-      expect(normalizeAuthorName("A    B    C")).toBe("ABC");
+      expect(normalizeAuthorName("H  O  L  Y")).toBe("Holy"); // All caps becomes title case
+      expect(normalizeAuthorName("A    B    C")).toBe("Abc"); // All caps becomes title case
     });
 
     test("should handle real-world examples", () => {
       // Spaced-out aesthetic names
-      expect(normalizeAuthorName("V I B E S")).toBe("VIBES");
-      expect(normalizeAuthorName("B U I L D")).toBe("BUILD");
+      expect(normalizeAuthorName("V I B E S")).toBe("Vibes"); // All caps becomes title case
+      expect(normalizeAuthorName("B U I L D")).toBe("Build"); // All caps becomes title case
 
       // Normal names stay normal
       expect(normalizeAuthorName("Crypto Builder")).toBe("Crypto Builder");
@@ -132,8 +132,8 @@ describe("Reply Generators", () => {
     });
 
     test("should handle names with emojis AND spaces", () => {
-      expect(normalizeAuthorName("🔥 H O L Y 🔥")).toBe("HOLY");
-      expect(normalizeAuthorName("V 💪 I 🚀 B E S")).toBe("VIBES");
+      expect(normalizeAuthorName("🔥 H O L Y 🔥")).toBe("Holy"); // All caps becomes title case
+      expect(normalizeAuthorName("V 💪 I 🚀 B E S")).toBe("Vibes"); // All caps becomes title case
     });
   });
 
