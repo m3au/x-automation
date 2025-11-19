@@ -34,6 +34,7 @@ import {
 } from "./hbd-patterns";
 
 import { CONFIG } from "./config";
+import { selectWeighted } from "./utils";
 import { introduceTypo } from "./typo-generator";
 
 // Check if post has "say it back" prompt
@@ -143,154 +144,60 @@ export function normalizeAuthorName(name: string): string {
   return normalized;
 }
 
-// Weighted random selection helpers
+// Weighted selection helpers (using general utility function)
 function selectWeightedGreeting(): string {
-  const totalWeight = gmGreetingsWeighted.reduce((sum, g) => sum + g.weight, 0);
-  let random = Math.random() * totalWeight;
-
-  for (const greeting of gmGreetingsWeighted) {
-    random -= greeting.weight;
-    if (random <= 0) {
-      return greeting.text;
-    }
-  }
-
-  return gmGreetingsWeighted[0].text;
+  return selectWeighted(gmGreetingsWeighted);
 }
 
 function selectWeightedForeignGreeting(): string {
-  const totalWeight = gmForeignGreetingsWeighted.reduce(
-    (sum, f) => sum + f.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-
-  for (const foreign of gmForeignGreetingsWeighted) {
-    random -= foreign.weight;
-    if (random <= 0) {
-      return foreign.text;
-    }
-  }
-
-  return gmForeignGreetingsWeighted[0].text;
+  return selectWeighted(gmForeignGreetingsWeighted);
 }
 
 function selectWeightedBaseName(): string {
-  const totalWeight = CONFIG.baseNameWeighted.reduce(
-    (sum, b) => sum + b.weight,
-    0
+  return selectWeighted(CONFIG.baseNameWeighted);
+}
+
+// Select a fallback name when author name can't be determined (excludes "authorName")
+function selectWeightedFallbackName(): string {
+  // Filter out "authorName" from the options
+  const fallbackOptions = CONFIG.baseNameWeighted.filter(
+    (b) => b.text !== "authorName"
   );
-  let random = Math.random() * totalWeight;
-
-  for (const baseName of CONFIG.baseNameWeighted) {
-    random -= baseName.weight;
-    if (random <= 0) {
-      return baseName.text;
-    }
+  if (fallbackOptions.length === 0) {
+    return "friend";
   }
-
-  return CONFIG.baseNameWeighted[0].text;
+  return selectWeighted(fallbackOptions);
 }
 
 function selectWeightedSuffix(): string {
-  const totalWeight = CONFIG.nameSuffixesWeighted.reduce(
-    (sum, s) => sum + s.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-
-  for (const suffix of CONFIG.nameSuffixesWeighted) {
-    random -= suffix.weight;
-    if (random <= 0) {
-      return suffix.text;
-    }
-  }
-
-  return CONFIG.nameSuffixesWeighted[0].text;
+  return selectWeighted(CONFIG.nameSuffixesWeighted);
 }
 
 // Weighted selection helpers for GN
 function selectWeightedGNGreeting(): string {
-  const totalWeight = gnGreetingsWeighted.reduce((sum, g) => sum + g.weight, 0);
-  let random = Math.random() * totalWeight;
-  for (const greeting of gnGreetingsWeighted) {
-    random -= greeting.weight;
-    if (random <= 0) {
-      return greeting.text;
-    }
-  }
-  return gnGreetingsWeighted[0].text;
+  return selectWeighted(gnGreetingsWeighted);
 }
 
 function selectWeightedGNForeignGreeting(): string {
-  const totalWeight = gnForeignGreetingsWeighted.reduce(
-    (sum, f) => sum + f.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-  for (const foreign of gnForeignGreetingsWeighted) {
-    random -= foreign.weight;
-    if (random <= 0) {
-      return foreign.text;
-    }
-  }
-  return gnForeignGreetingsWeighted[0].text;
+  return selectWeighted(gnForeignGreetingsWeighted);
 }
 
 // Weighted selection helpers for GA
 function selectWeightedGAGreeting(): string {
-  const totalWeight = gaGreetingsWeighted.reduce((sum, g) => sum + g.weight, 0);
-  let random = Math.random() * totalWeight;
-  for (const greeting of gaGreetingsWeighted) {
-    random -= greeting.weight;
-    if (random <= 0) {
-      return greeting.text;
-    }
-  }
-  return gaGreetingsWeighted[0].text;
+  return selectWeighted(gaGreetingsWeighted);
 }
 
 function selectWeightedGAForeignGreeting(): string {
-  const totalWeight = gaForeignGreetingsWeighted.reduce(
-    (sum, f) => sum + f.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-  for (const foreign of gaForeignGreetingsWeighted) {
-    random -= foreign.weight;
-    if (random <= 0) {
-      return foreign.text;
-    }
-  }
-  return gaForeignGreetingsWeighted[0].text;
+  return selectWeighted(gaForeignGreetingsWeighted);
 }
 
 // Weighted selection helpers for GE
 function selectWeightedGEGreeting(): string {
-  const totalWeight = geGreetingsWeighted.reduce((sum, g) => sum + g.weight, 0);
-  let random = Math.random() * totalWeight;
-  for (const greeting of geGreetingsWeighted) {
-    random -= greeting.weight;
-    if (random <= 0) {
-      return greeting.text;
-    }
-  }
-  return geGreetingsWeighted[0].text;
+  return selectWeighted(geGreetingsWeighted);
 }
 
 function selectWeightedGEForeignGreeting(): string {
-  const totalWeight = geForeignGreetingsWeighted.reduce(
-    (sum, f) => sum + f.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-  for (const foreign of geForeignGreetingsWeighted) {
-    random -= foreign.weight;
-    if (random <= 0) {
-      return foreign.text;
-    }
-  }
-  return geForeignGreetingsWeighted[0].text;
+  return selectWeighted(geForeignGreetingsWeighted);
 }
 
 export function generateGMReply(authorName: string, postText = ""): string {
@@ -368,9 +275,9 @@ export function generateGMReply(authorName: string, postText = ""): string {
   // Select base name (authorName, friend, fam, anon, mf)
   let baseName = selectWeightedBaseName();
 
-  // If name is "authorName" but normalized name is empty/invalid, use fallback
-  if (baseName === "authorName" && !firstName) {
-    baseName = "friend"; // Fallback to generic greeting
+  // If name is "authorName" but normalized name is empty/invalid/Unknown, use fallback
+  if (baseName === "authorName" && (!firstName || firstName.toLowerCase() === "unknown")) {
+    baseName = selectWeightedFallbackName(); // Fallback to generic greeting (friend, fam, etc.)
   }
 
   let finalName: string;
@@ -498,9 +405,9 @@ export function generateGNReply(authorName: string, postText = ""): string {
   // Select base name (shared config)
   let baseName = selectWeightedBaseName();
 
-  // If name is "authorName" but normalized name is empty/invalid, use fallback
-  if (baseName === "authorName" && !firstName) {
-    baseName = "friend"; // Fallback to generic greeting
+  // If name is "authorName" but normalized name is empty/invalid/Unknown, use fallback
+  if (baseName === "authorName" && (!firstName || firstName.toLowerCase() === "unknown")) {
+    baseName = selectWeightedFallbackName(); // Fallback to generic greeting (friend, fam, etc.)
   }
 
   let finalName: string;
@@ -626,9 +533,9 @@ export function generateGAReply(authorName: string, postText = ""): string {
   // Select base name (shared config)
   let baseName = selectWeightedBaseName();
 
-  // If name is "authorName" but normalized name is empty/invalid, use fallback
-  if (baseName === "authorName" && !firstName) {
-    baseName = "friend"; // Fallback to generic greeting
+  // If name is "authorName" but normalized name is empty/invalid/Unknown, use fallback
+  if (baseName === "authorName" && (!firstName || firstName.toLowerCase() === "unknown")) {
+    baseName = selectWeightedFallbackName(); // Fallback to generic greeting (friend, fam, etc.)
   }
 
   let finalName: string;
@@ -756,9 +663,9 @@ export function generateGEReply(authorName: string, postText = ""): string {
   // Select base name (shared config)
   let baseName = selectWeightedBaseName();
 
-  // If name is "authorName" but normalized name is empty/invalid, use fallback
-  if (baseName === "authorName" && !firstName) {
-    baseName = "friend"; // Fallback to generic greeting
+  // If name is "authorName" but normalized name is empty/invalid/Unknown, use fallback
+  if (baseName === "authorName" && (!firstName || firstName.toLowerCase() === "unknown")) {
+    baseName = selectWeightedFallbackName(); // Fallback to generic greeting (friend, fam, etc.)
   }
 
   let finalName: string;
@@ -815,33 +722,11 @@ export function generateGEReply(authorName: string, postText = ""): string {
 
 // Weighted selection helpers for HBD
 function selectWeightedHBDGreeting(): string {
-  const totalWeight = hbdGreetingsWeighted.reduce(
-    (sum, g) => sum + g.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-  for (const greeting of hbdGreetingsWeighted) {
-    random -= greeting.weight;
-    if (random <= 0) {
-      return greeting.text;
-    }
-  }
-  return hbdGreetingsWeighted[0].text;
+  return selectWeighted(hbdGreetingsWeighted);
 }
 
 function selectWeightedHBDForeignGreeting(): string {
-  const totalWeight = hbdForeignGreetingsWeighted.reduce(
-    (sum, f) => sum + f.weight,
-    0
-  );
-  let random = Math.random() * totalWeight;
-  for (const foreign of hbdForeignGreetingsWeighted) {
-    random -= foreign.weight;
-    if (random <= 0) {
-      return foreign.text;
-    }
-  }
-  return hbdForeignGreetingsWeighted[0].text;
+  return selectWeighted(hbdForeignGreetingsWeighted);
 }
 
 export function generateHBDReply(authorName: string, postText = ""): string {
@@ -899,9 +784,9 @@ export function generateHBDReply(authorName: string, postText = ""): string {
   // Select base name (shared config)
   let baseName = selectWeightedBaseName();
 
-  // If name is "authorName" but normalized name is empty/invalid, use fallback
-  if (baseName === "authorName" && !firstName) {
-    baseName = "friend"; // Fallback to generic greeting
+  // If name is "authorName" but normalized name is empty/invalid/Unknown, use fallback
+  if (baseName === "authorName" && (!firstName || firstName.toLowerCase() === "unknown")) {
+    baseName = selectWeightedFallbackName(); // Fallback to generic greeting (friend, fam, etc.)
   }
 
   let finalName: string;

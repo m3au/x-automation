@@ -2,6 +2,8 @@
  * Post detection utilities for identifying GM, GN, GA, GE, and HBD posts
  */
 
+import { escapeRegexPatterns } from "./utils";
+
 /**
  * Checks if a post is a GM (Good Morning) post
  */
@@ -9,9 +11,7 @@ export function isGMPost(
   postText: string,
   patterns: readonly string[]
 ): boolean {
-  const escapedPatterns = patterns
-    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
-    .join("|");
+  const escapedPatterns = escapeRegexPatterns(patterns);
   const gmPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return gmPattern.test(postText);
 }
@@ -23,9 +23,7 @@ export function isGNPost(
   postText: string,
   patterns: readonly string[]
 ): boolean {
-  const escapedPatterns = patterns
-    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
-    .join("|");
+  const escapedPatterns = escapeRegexPatterns(patterns);
   const gnPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return gnPattern.test(postText);
 }
@@ -37,9 +35,7 @@ export function isGAPost(
   postText: string,
   patterns: readonly string[]
 ): boolean {
-  const escapedPatterns = patterns
-    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
-    .join("|");
+  const escapedPatterns = escapeRegexPatterns(patterns);
   const gaPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return gaPattern.test(postText);
 }
@@ -51,9 +47,7 @@ export function isGEPost(
   postText: string,
   patterns: readonly string[]
 ): boolean {
-  const escapedPatterns = patterns
-    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
-    .join("|");
+  const escapedPatterns = escapeRegexPatterns(patterns);
   const gePattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return gePattern.test(postText);
 }
@@ -65,9 +59,7 @@ export function isHBDPost(
   postText: string,
   patterns: readonly string[]
 ): boolean {
-  const escapedPatterns = patterns
-    .map((p) => p.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&"))
-    .join("|");
+  const escapedPatterns = escapeRegexPatterns(patterns);
   const hbdPattern = new RegExp(`\\b(?:${escapedPatterns})\\b`, "i");
   return hbdPattern.test(postText);
 }

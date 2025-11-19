@@ -21,13 +21,12 @@ import {
   getLastPostDate,
   goBackToFollowingList,
   hasOnlyReposts,
-  hasSuspiciousUsername,
   isUserVerified,
   scrollToEndOfList,
-  sleep,
   unfollowFromList,
   waitForProfileLoad,
-} from "./unfollow-utils";
+} from "./dom-utils";
+import { hasSuspiciousUsername, sleepRange } from "./utils";
 
 // Unfollow configuration
 const UNFOLLOW_CONFIG = {
@@ -239,7 +238,7 @@ async function unfollowUser(username: string): Promise<boolean> {
     followingButton.dispatchEvent(mouseOverEvent);
 
     // Wait for hover state to activate
-    await sleep(300, 500, getShouldStop);
+    await sleepRange(300, 500, getShouldStop);
 
     // Now look for the Unfollow button (it should appear after hover)
     const unfollowButton = Array.from(
@@ -254,13 +253,13 @@ async function unfollowUser(username: string): Promise<boolean> {
       // Click the Unfollow button that appeared on hover
       console.log(`👆 Clicking Unfollow button...`);
       unfollowButton.click();
-      await sleep(500, 1000, getShouldStop);
+      await sleepRange(500, 1000, getShouldStop);
     } else {
       console.log(
         "👆 Unfollow button not visible, clicking Following button..."
       );
       followingButton.click();
-      await sleep(500, 1000, getShouldStop);
+      await sleepRange(500, 1000, getShouldStop);
     }
 
     // Wait for confirmation dialog to appear and click the confirm button
@@ -275,7 +274,7 @@ async function unfollowUser(username: string): Promise<boolean> {
       if (confirmationButton) {
         break;
       }
-      await sleep(200, 300, getShouldStop);
+      await sleepRange(200, 300, getShouldStop);
     }
 
     if (!confirmationButton) {
@@ -287,7 +286,7 @@ async function unfollowUser(username: string): Promise<boolean> {
     console.log(`✅ Confirming unfollow...`);
     confirmationButton.click();
 
-    await sleep(1000, 1500, getShouldStop);
+    await sleepRange(1000, 1500, getShouldStop);
 
     console.log(`✅ Unfollowed @${username}`);
     return true;
@@ -333,7 +332,7 @@ async function main(): Promise<void> {
     // Start from top: don't scroll to end, just process users naturally as we scroll down
     console.log("⬆️ Starting from top, processing users naturally...");
     window.scrollTo({ top: 0, behavior: "auto" });
-    await sleep(500, 800, getShouldStop);
+    await sleepRange(500, 800, getShouldStop);
     userCells = getAllUserCells();
     // We don't know the total count, so we'll process until we run out of users
     totalUsers = Number.MAX_SAFE_INTEGER; // Process until no more users found
@@ -346,7 +345,7 @@ async function main(): Promise<void> {
       top: document.documentElement.scrollHeight,
       behavior: "smooth",
     });
-    await sleep(1000, 1500, getShouldStop);
+    await sleepRange(1000, 1500, getShouldStop);
     userCells = getAllUserCells();
   }
 
@@ -368,7 +367,7 @@ async function main(): Promise<void> {
     userCells = getAllUserCells();
     if (userCells.length === 0) {
       console.log("⚠️ No user cells found, waiting...");
-      await sleep(2000, 3000, getShouldStop);
+      await sleepRange(2000, 3000, getShouldStop);
       userCells = getAllUserCells();
       if (userCells.length === 0) {
         console.log("❌ Could not find user cells, skipping...");
@@ -389,7 +388,7 @@ async function main(): Promise<void> {
         // No unprocessed users found, try scrolling down to load more
         const scrollHeightBefore = document.documentElement.scrollHeight;
         window.scrollBy({ top: 500, behavior: "smooth" });
-        await sleep(1000, 1500, getShouldStop);
+        await sleepRange(1000, 1500, getShouldStop);
         userCells = getAllUserCells();
         cell = userCells.find((c) => {
           const info = extractUserInfo(c);
@@ -414,7 +413,7 @@ async function main(): Promise<void> {
       }
       // Scroll the cell into view (this will naturally scroll down if needed)
       cell.scrollIntoView({ behavior: "smooth", block: "center" });
-      await sleep(500, 800, getShouldStop);
+      await sleepRange(500, 800, getShouldStop);
     } else {
       // Process from bottom: calculate position and scroll up
       const position = totalUsers - index - 1;
@@ -424,7 +423,7 @@ async function main(): Promise<void> {
         top: Math.max(0, scrollPosition),
         behavior: "smooth",
       });
-      await sleep(1000, 1500, getShouldStop);
+      await sleepRange(1000, 1500, getShouldStop);
       userCells = getAllUserCells();
       cell = userCells.at(-1);
     }
@@ -446,7 +445,7 @@ async function main(): Promise<void> {
       // If starting from top, scroll past this user
       if (UNFOLLOW_CONFIG.startFromTop) {
         window.scrollBy({ top: 100, behavior: "smooth" });
-        await sleep(500, 800, getShouldStop);
+        await sleepRange(500, 800, getShouldStop);
       }
       continue;
     }
@@ -476,7 +475,7 @@ async function main(): Promise<void> {
             `📊 Unfollowed ${unfollowedCount}/${MAX_UNFOLLOWS_PER_DAY} today`
           );
           // Wait a bit before continuing
-          await sleep(1500, 2000, getShouldStop);
+          await sleepRange(1500, 2000, getShouldStop);
           continue; // Skip profile check, already unfollowed
         }
       }
@@ -485,7 +484,7 @@ async function main(): Promise<void> {
     // Scroll cell into view before clicking (if not already scrolled)
     if (!UNFOLLOW_CONFIG.startFromTop) {
       cell.scrollIntoView({ behavior: "smooth", block: "center" });
-      await sleep(500, 800, getShouldStop);
+      await sleepRange(500, 800, getShouldStop);
     }
 
     // Click UserCell button to open profile (without navigating)
@@ -495,7 +494,7 @@ async function main(): Promise<void> {
     const loaded = await waitForProfileLoad(getShouldStop);
     if (!loaded) {
       console.log("⚠️ Profile did not load in time, skipping...");
-      await sleep(1000, 1500, getShouldStop);
+      await sleepRange(1000, 1500, getShouldStop);
       continue;
     }
 
@@ -522,10 +521,10 @@ async function main(): Promise<void> {
     await goBackToFollowingList(getShouldStop);
 
     // Wait for list to reload
-    await sleep(1500, 2000, getShouldStop);
+    await sleepRange(1500, 2000, getShouldStop);
 
     // Add a human-like delay between checks
-    await sleep(2000, 3000, getShouldStop);
+    await sleepRange(2000, 3000, getShouldStop);
   }
 
   console.log(`\n✅ Script completed!`);

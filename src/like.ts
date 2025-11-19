@@ -10,10 +10,13 @@ import {
   findAllLikeButtons,
   getButtonUniqueId,
   isButtonAlreadyLiked,
+  isDocumentVisible,
   isLikeButtonDisabled,
   isOldVersionPost,
   isReplyPost,
+  waitForVisibility,
 } from "./dom-utils";
+import { sleep } from "./utils";
 import {
   isGAPost as detectGAPost,
   isGEPost as detectGEPost,
@@ -57,25 +60,6 @@ import {
     }
   }
 
-  const sleep = async (ms: number): Promise<void> => {
-    return new Promise((resolve) => {
-      if (shouldStop) {
-        resolve();
-        return;
-      }
-      const startTime = Date.now();
-      const interval = setInterval(() => {
-        if (shouldStop || Date.now() - startTime >= ms) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 100); // Check every 100ms for shouldStop
-      setTimeout(() => {
-        clearInterval(interval);
-        resolve();
-      }, ms);
-    });
-  };
 
   // Check for loading spinner and wait for it to disappear
   async function waitForLoadingToComplete(maxWaitTime = 10000): Promise<void> {
@@ -101,14 +85,14 @@ import {
 
     // Wait for spinner to disappear
     while (Date.now() - startTime < maxWaitTime && !shouldStop) {
-      await sleep(200); // Check every 200ms
+      await sleep(200, () => shouldStop); // Check every 200ms
       if (shouldStop) return;
 
       spinner = checkForSpinner();
       if (!spinner) {
         console.log("✅ Loading complete");
         // Wait a bit more to ensure content is fully loaded
-        await sleep(300);
+        await sleep(300, () => shouldStop);
         if (shouldStop) return;
         return;
       }
@@ -207,7 +191,7 @@ import {
     finalDelay = Math.max(minDelay, Math.floor(finalDelay));
 
     console.log(`Waiting for ${Math.round(finalDelay / 1000)} seconds...`);
-    await sleep(finalDelay);
+    await sleep(finalDelay, () => shouldStop);
     if (shouldStop) return;
   }
 
@@ -267,13 +251,13 @@ import {
 
       // Variable delay between steps
       const stepDelay = baseStepDelay * (1 + Math.random() * 0.5);
-      await sleep(stepDelay);
+      await sleep(stepDelay, () => shouldStop);
     }
 
     // Handle overshoot and correction if needed
     if (shouldOvershoot) {
       window.scrollBy(0, overshootDistance);
-      await sleep(200 + Math.random() * 300);
+      await sleep(200 + Math.random() * 300, () => shouldStop);
 
       // Scroll back smoothly
       const correctionSteps = 8 + Math.floor(Math.random() * 5);
@@ -285,7 +269,7 @@ import {
           -overshootDistance *
             (easeOutQuad - (i > 0 ? (i - 1) / correctionSteps : 0))
         );
-        await sleep(30 + Math.random() * 20);
+        await sleep(30 + Math.random() * 20, () => shouldStop);
       }
     }
   }
@@ -378,7 +362,7 @@ import {
     let detailPageLoaded = false;
 
     while (Date.now() - startTime < maxWaitTime && !shouldStop) {
-      await sleep(500); // Check every 500ms
+      await sleep(500, () => shouldStop); // Check every 500ms
       if (shouldStop) return 0;
 
       // Check if URL changed - only abort if it's a profile redirect (not a status page)
@@ -405,7 +389,7 @@ import {
           // Try to go back if possible
           if (window.history.length > 1) {
             window.history.back();
-            await sleep(2000);
+            await sleep(2000, () => shouldStop);
           }
           return 0;
         }
@@ -445,7 +429,8 @@ import {
       CONFIG.diveIntoComments.waitForLoad.min +
         Math.random() *
           (CONFIG.diveIntoComments.waitForLoad.max -
-            CONFIG.diveIntoComments.waitForLoad.min)
+            CONFIG.diveIntoComments.waitForLoad.min),
+      () => shouldStop
     );
     if (shouldStop) return 0;
 
@@ -543,7 +528,8 @@ import {
       // Small delay before liking
       await sleep(
         CONFIG.beforeClick.min +
-          Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
+          Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min),
+        () => shouldStop
       );
       if (shouldStop) break;
 
@@ -555,7 +541,8 @@ import {
       // Small delay after liking
       await sleep(
         CONFIG.afterClick.min +
-          Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min)
+          Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min),
+        () => shouldStop
       );
       if (shouldStop) break;
     }
@@ -577,7 +564,8 @@ import {
       CONFIG.diveIntoComments.beforeBack.min +
         Math.random() *
           (CONFIG.diveIntoComments.beforeBack.max -
-            CONFIG.diveIntoComments.beforeBack.min)
+            CONFIG.diveIntoComments.beforeBack.min),
+      () => shouldStop
     );
 
     // Try multiple methods to go back
@@ -590,7 +578,7 @@ import {
     if (backButton && backButton.offsetParent !== null) {
       // Check if button is visible
       try {
-        backButton.click();
+      backButton.click();
         console.log("⬅️ Clicked back button (method 1)");
         wentBack = true;
       } catch (error) {
@@ -604,7 +592,7 @@ import {
         window.history.back();
         console.log("⬅️ Used browser back (method 2)");
         wentBack = true;
-        await sleep(1000); // Give it time to navigate
+        await sleep(1000, () => shouldStop); // Give it time to navigate
       } catch (error) {
         console.log("⚠️ Failed browser back:", error);
       }
@@ -623,7 +611,7 @@ import {
         );
         console.log("⬅️ Sent ESC key (method 3)");
         wentBack = true;
-        await sleep(1000);
+        await sleep(1000, () => shouldStop);
       } catch (error) {
         console.log("⚠️ Failed ESC key:", error);
       }
@@ -639,7 +627,7 @@ import {
           homeLink.click();
           console.log("⬅️ Clicked home link (method 4)");
           wentBack = true;
-          await sleep(1000);
+          await sleep(1000, () => shouldStop);
         } catch (error) {
           console.log("⚠️ Failed home link:", error);
         }
@@ -656,7 +644,7 @@ import {
           logoLink.click();
           console.log("⬅️ Clicked home logo (method 5)");
           wentBack = true;
-          await sleep(2000);
+          await sleep(2000, () => shouldStop);
         } catch (error) {
           console.log("⚠️ Failed logo click:", error);
         }
@@ -674,7 +662,8 @@ import {
       CONFIG.diveIntoComments.afterBack.min +
         Math.random() *
           (CONFIG.diveIntoComments.afterBack.max -
-            CONFIG.diveIntoComments.afterBack.min)
+            CONFIG.diveIntoComments.afterBack.min),
+      () => shouldStop
     );
 
     // Wait for any loading spinner to disappear
@@ -698,60 +687,9 @@ import {
             CONFIG.breathingBreak.afterActions.min)
       );
 
-    // Function to check if document is visible
-    function isDocumentVisible(): boolean {
-      return !document.hidden;
-    }
-
-    // Function to wait for document to become visible
-    async function waitForVisibility(
-      maxWaitTime = CONFIG.maxVisibilityWait
-    ): Promise<boolean> {
-      console.log("Page not active. Waiting for visibility...");
-
-      if (isDocumentVisible()) {
-        return true;
-      }
-
-      return new Promise((resolve) => {
-        let waitTime = 0;
-        const checkInterval = CONFIG.visibilityCheckInterval;
-
-        const visibilityInterval = setInterval(() => {
-          waitTime += checkInterval;
-
-          if (isDocumentVisible()) {
-            console.log("Page became active again, continuing...");
-            clearInterval(visibilityInterval);
-            resolve(true);
-          }
-
-          if (waitTime >= maxWaitTime || shouldStop) {
-            console.log("Max wait time reached or stop requested");
-            clearInterval(visibilityInterval);
-            resolve(false);
-          }
-        }, checkInterval);
-
-        // Also listen for visibility change events
-        const handleVisibilityChange = (): void => {
-          if (isDocumentVisible()) {
-            console.log("Page became active again, continuing...");
-            document.removeEventListener(
-              "visibilitychange",
-              handleVisibilityChange
-            );
-            clearInterval(visibilityInterval);
-            resolve(true);
-          }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-      });
-    }
 
     console.log("Starting to process posts...");
-    await sleep(CONFIG.initialDelay);
+    await sleep(CONFIG.initialDelay, () => shouldStop);
 
     let foundInitialPost = false;
     let initialScrollAttempts = 0;
@@ -805,7 +743,8 @@ import {
             await sleep(
               CONFIG.scrollDelay.min +
                 Math.random() *
-                  (CONFIG.scrollDelay.max - CONFIG.scrollDelay.min)
+                  (CONFIG.scrollDelay.max - CONFIG.scrollDelay.min),
+              () => shouldStop
             );
             // Wait for loading spinner if present
             await waitForLoadingToComplete();
@@ -834,7 +773,8 @@ import {
           await sleep(
             CONFIG.scrollSearch.min +
               Math.random() *
-                (CONFIG.scrollSearch.max - CONFIG.scrollSearch.min)
+                (CONFIG.scrollSearch.max - CONFIG.scrollSearch.min),
+            () => shouldStop
           );
           // Wait for loading spinner if present
           await waitForLoadingToComplete();
@@ -908,7 +848,7 @@ import {
               return;
             }
             console.log("Tab active again - resuming operation");
-            await sleep(CONFIG.visibilityWait);
+            await sleep(CONFIG.visibilityWait, () => shouldStop);
             continue;
           }
 
@@ -921,7 +861,7 @@ import {
         await humanLikeScroll(window.scrollY + scrollAmount, {
           variation: "quick",
         });
-        await sleep(1500);
+        await sleep(1500, () => shouldStop);
         // Wait for loading spinner if present
         await waitForLoadingToComplete();
         continue;
@@ -1012,7 +952,8 @@ import {
           await humanLikeScroll(targetY, { shouldOvershoot: false });
           await sleep(
             CONFIG.scrollDelay.min +
-              Math.random() * (CONFIG.scrollDelay.max - CONFIG.scrollDelay.min)
+            Math.random() * (CONFIG.scrollDelay.max - CONFIG.scrollDelay.min),
+          () => shouldStop
           );
           // Wait for loading spinner if present
           await waitForLoadingToComplete();
@@ -1052,7 +993,7 @@ import {
                 `🎥 Video found, waiting extra ${Math.round(videoViewTime / 1000)}s`
               );
             }
-            await sleep(videoViewTime);
+            await sleep(videoViewTime, () => shouldStop);
           } else if (hasImage) {
             const imageViewTime =
               CONFIG.imageTime.min +
@@ -1060,7 +1001,7 @@ import {
             console.log(
               `📸 Image found, waiting extra ${Math.round(imageViewTime / 1000)}s`
             );
-            await sleep(imageViewTime);
+            await sleep(imageViewTime, () => shouldStop);
           }
         }
 
@@ -1068,7 +1009,8 @@ import {
         if (!(isGM || isGN || isGA || isGE || isHBD)) {
           await sleep(
             CONFIG.beforeClick.min +
-              Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min)
+              Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min),
+            () => shouldStop
           );
         }
 
@@ -1120,16 +1062,19 @@ import {
         // Small delay after like to let DOM settle
         await sleep(
           CONFIG.afterClick.min +
-            Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min)
+            Math.random() * (CONFIG.afterClick.max - CONFIG.afterClick.min),
+          () => shouldStop
         );
         // Wait for loading spinner if present
         await waitForLoadingToComplete();
 
         // If it's a GM/GN/GA/GE/HBD post, click reply and compose response
+        // IMPORTANT: Double-check that this is NOT a reply to another post
         if (
           (isGM || isGN || isGA || isGE || isHBD) &&
           post &&
-          post.tagName.toLowerCase() === "article"
+          post.tagName.toLowerCase() === "article" &&
+          !isReplyPost(post) // Safety check: never reply to replies
         ) {
           let postType: string;
           if (isHBD) {
@@ -1161,7 +1106,8 @@ import {
                 CONFIG.replyDelays.beforeReplyClick.min +
                   Math.random() *
                     (CONFIG.replyDelays.beforeReplyClick.max -
-                      CONFIG.replyDelays.beforeReplyClick.min)
+                      CONFIG.replyDelays.beforeReplyClick.min),
+                () => shouldStop
               );
               if (shouldStop) return;
 
@@ -1172,7 +1118,8 @@ import {
                 CONFIG.replyDelays.waitForReplyBox.min +
                   Math.random() *
                     (CONFIG.replyDelays.waitForReplyBox.max -
-                      CONFIG.replyDelays.waitForReplyBox.min)
+                      CONFIG.replyDelays.waitForReplyBox.min),
+                () => shouldStop
               ); // Wait for reply box to open
               if (shouldStop) return;
 
@@ -1214,7 +1161,8 @@ import {
                     CONFIG.replyDelays.afterFocus.min +
                       Math.random() *
                         (CONFIG.replyDelays.afterFocus.max -
-                          CONFIG.replyDelays.afterFocus.min)
+                          CONFIG.replyDelays.afterFocus.min),
+                    () => shouldStop
                   );
 
                   // Type character by character for human-like behavior
@@ -1224,7 +1172,8 @@ import {
                       CONFIG.replyDelays.perCharacter.min +
                         Math.random() *
                           (CONFIG.replyDelays.perCharacter.max -
-                            CONFIG.replyDelays.perCharacter.min)
+                            CONFIG.replyDelays.perCharacter.min),
+                      () => shouldStop
                     );
                     if (shouldStop) return;
                   }
@@ -1236,7 +1185,8 @@ import {
                     CONFIG.replyDelays.beforeSend.min +
                       Math.random() *
                         (CONFIG.replyDelays.beforeSend.max -
-                          CONFIG.replyDelays.beforeSend.min)
+                          CONFIG.replyDelays.beforeSend.min),
+                    () => shouldStop
                   );
 
                   // Find and click the Reply button
@@ -1250,7 +1200,8 @@ import {
                       CONFIG.replyDelays.waitForModalClose.min +
                         Math.random() *
                           (CONFIG.replyDelays.waitForModalClose.max -
-                            CONFIG.replyDelays.waitForModalClose.min)
+                            CONFIG.replyDelays.waitForModalClose.min),
+                      () => shouldStop
                     ); // Wait for modal to auto-close
                     console.log(
                       "💬 Modal auto-closed, continuing to next post"
@@ -1271,7 +1222,8 @@ import {
                       CONFIG.replyDelays.escapeKeyFallback.min +
                         Math.random() *
                           (CONFIG.replyDelays.escapeKeyFallback.max -
-                            CONFIG.replyDelays.escapeKeyFallback.min)
+                            CONFIG.replyDelays.escapeKeyFallback.min),
+                      () => shouldStop
                     );
                   }
                 } else {
@@ -1372,7 +1324,7 @@ import {
             `📊 Progress: ${processedCount}/${limit} posts completed\n`
           );
           
-          await sleep(breakDuration);
+          await sleep(breakDuration, () => shouldStop);
           
           console.log("✅ Break complete - resuming automation...\n");
           
@@ -1419,7 +1371,7 @@ import {
             `📊 Progress: ${processedCount}/${limit} posts completed\n`
           );
 
-          await sleep(breakDuration);
+          await sleep(breakDuration, () => shouldStop);
 
           console.log("✅ Break complete - resuming automation...\n");
 

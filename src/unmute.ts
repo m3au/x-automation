@@ -3,16 +3,14 @@
  * Browser console script to unmute all muted accounts
  */
 
+import { sleep } from "./utils";
+
 (function () {
   "use strict";
 
   interface WindowWithUnmute extends Window {
     unmuteMassive: () => Promise<void>;
   }
-
-  const sleep = async (ms: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  };
 
   async function unmuteMassive(): Promise<void> {
     // Find all buttons with "Unmute" in their aria-label

@@ -2,6 +2,11 @@
 // @ts-expect-error - Bun test types
 import { describe, expect, test } from "bun:test";
 import {
+  generateGAReply,
+  generateGEReply,
+  generateGMReply,
+  generateGNReply,
+  generateHBDReply,
   generateSayItBackReply,
   hasSayItBack,
   normalizeAuthorName,
@@ -221,6 +226,164 @@ describe("Reply Generators", () => {
         expect(echo.toLowerCase()).not.toContain("say it back");
         expect(echo.toLowerCase()).not.toContain("say back");
       }
+    });
+  });
+
+  describe("generateGMReply", () => {
+    test("should return a non-empty string", () => {
+      const reply = generateGMReply("Alice");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+      expect(reply.length).toBeGreaterThan(0);
+    });
+
+    test("should handle empty author name", () => {
+      const reply = generateGMReply("");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+    });
+
+    test("should include greeting in most cases", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateGMReply("Alice"));
+      }
+      // At least some should contain common greetings
+      const hasGreeting = replies.some(
+        (r) =>
+          r.toLowerCase().includes("gm") ||
+          r.toLowerCase().includes("morning") ||
+          r.toLowerCase().includes("good")
+      );
+      expect(hasGreeting).toBe(true);
+    });
+
+    test("should handle keyword echo in post text", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateGMReply("Alice", "gm degen"));
+      }
+      // Some should echo the keyword
+      const hasKeyword = replies.some((r) =>
+        r.toLowerCase().includes("degen")
+      );
+      expect(hasKeyword).toBe(true);
+    });
+  });
+
+  describe("generateGNReply", () => {
+    test("should return a non-empty string", () => {
+      const reply = generateGNReply("Alice");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+      expect(reply.length).toBeGreaterThan(0);
+    });
+
+    test("should handle empty author name", () => {
+      const reply = generateGNReply("");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+    });
+
+    test("should include greeting in most cases", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateGNReply("Alice"));
+      }
+      const hasGreeting = replies.some(
+        (r) =>
+          r.toLowerCase().includes("gn") ||
+          r.toLowerCase().includes("night") ||
+          r.toLowerCase().includes("good")
+      );
+      expect(hasGreeting).toBe(true);
+    });
+  });
+
+  describe("generateGAReply", () => {
+    test("should return a non-empty string", () => {
+      const reply = generateGAReply("Alice");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+      expect(reply.length).toBeGreaterThan(0);
+    });
+
+    test("should handle empty author name", () => {
+      const reply = generateGAReply("");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+    });
+
+    test("should include greeting in most cases", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateGAReply("Alice"));
+      }
+      const hasGreeting = replies.some(
+        (r) =>
+          r.toLowerCase().includes("ga") ||
+          r.toLowerCase().includes("afternoon") ||
+          r.toLowerCase().includes("good")
+      );
+      expect(hasGreeting).toBe(true);
+    });
+  });
+
+  describe("generateGEReply", () => {
+    test("should return a non-empty string", () => {
+      const reply = generateGEReply("Alice");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+      expect(reply.length).toBeGreaterThan(0);
+    });
+
+    test("should handle empty author name", () => {
+      const reply = generateGEReply("");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+    });
+
+    test("should include greeting in most cases", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateGEReply("Alice"));
+      }
+      const hasGreeting = replies.some(
+        (r) =>
+          r.toLowerCase().includes("ge") ||
+          r.toLowerCase().includes("evening") ||
+          r.toLowerCase().includes("good")
+      );
+      expect(hasGreeting).toBe(true);
+    });
+  });
+
+  describe("generateHBDReply", () => {
+    test("should return a non-empty string", () => {
+      const reply = generateHBDReply("Alice");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+      expect(reply.length).toBeGreaterThan(0);
+    });
+
+    test("should handle empty author name", () => {
+      const reply = generateHBDReply("");
+      expect(reply).toBeTruthy();
+      expect(typeof reply).toBe("string");
+    });
+
+    test("should include birthday greeting in most cases", () => {
+      const replies: string[] = [];
+      for (let i = 0; i < 50; i++) {
+        replies.push(generateHBDReply("Alice"));
+      }
+      const hasGreeting = replies.some(
+        (r) =>
+          r.toLowerCase().includes("hbd") ||
+          r.toLowerCase().includes("birthday") ||
+          r.toLowerCase().includes("happy")
+      );
+      expect(hasGreeting).toBe(true);
     });
   });
 });
