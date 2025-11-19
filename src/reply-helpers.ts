@@ -3,9 +3,101 @@
  * Extracted for testability
  */
 
+// Detect if post contains obvious crypto/trading content
+export function detectCryptoTradingContent(postText: string): boolean {
+  const lowerText = postText.toLowerCase();
+
+  // Common crypto/trading terms that indicate degen content
+  const cryptoTerms = [
+    "btc",
+    "eth",
+    "sol",
+    "coin",
+    "token",
+    "nft",
+    "crypto",
+    "blockchain",
+    "defi",
+    "yield",
+    "liquidity",
+    "staking",
+    "airdrop",
+    "whitelist",
+    "presale",
+    "ico",
+    "moon",
+    "pump",
+    "dump",
+    "hodl",
+    "to the moon",
+    "wen",
+    "bullish",
+    "bearish",
+    "trading",
+    "chart",
+    "technical analysis",
+    "support",
+    "resistance",
+    "breakout",
+    "altcoin",
+    "alt coin",
+    "shitcoin",
+    "shit coin",
+    "memecoin",
+    "meme coin",
+    "pump it",
+    "buy the dip",
+    "sell the news",
+    "whale",
+    "diamond hands",
+    "paper hands",
+    "rekt",
+    "bagholder",
+    "gas fees",
+    "uniswap",
+    "pancakeswap",
+    "swap",
+    "bridge",
+    "satoshi",
+    "wei",
+    "gwei",
+  ];
+
+  // Check if any crypto terms are present
+  for (const term of cryptoTerms) {
+    if (lowerText.includes(term)) {
+      return true;
+    }
+  }
+
+  // Check for common patterns like "$COIN" or coin tickers
+  // Pattern: $ followed by 2-5 uppercase letters (common for crypto tickers)
+  if (/\$\b[A-Z]{2,5}\b/.test(postText)) {
+    return true;
+  }
+
+  // Check for coin price mentions (e.g., "$0.0001", "up 100%", "+500%")
+  if (/\$\d+\.?\d*\s*(?:usd|usdt|usdc)/i.test(lowerText)) {
+    return true;
+  }
+  if (/(?:up|down|gained|lost)\s+\d+%/.test(lowerText)) {
+    return true;
+  }
+  if (/\+\d+%/i.test(postText)) {
+    return true;
+  }
+
+  return false;
+}
+
 // Detect special keywords in post text and return the keyword to echo back
 export function detectKeywordToEcho(postText: string): string | null {
   const lowerText = postText.toLowerCase();
+
+  // First, check if post contains crypto/trading content -> reply with "degen"
+  if (detectCryptoTradingContent(postText)) {
+    return "degen";
+  }
 
   // Check for these keywords in order of specificity
   if (lowerText.includes("retards")) return "retards";

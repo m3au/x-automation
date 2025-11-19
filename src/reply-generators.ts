@@ -3,6 +3,23 @@
  */
 
 import { detectKeywordToEcho, detectWeekdayInPost } from "./reply-helpers";
+
+// Get a variation of "degen" for variety in replies
+function getDegenVariation(): string {
+  const variations = [
+    "degen",
+    "degens",
+    "degen",
+    "degens",
+    "degen ape",
+    "degen alpha",
+    "degen 🚀",
+    "degens",
+    "degen",
+  ];
+  // Mostly "degen" or "degens" (6/9 = 67%), but some fun variations (33%)
+  return variations[Math.floor(Math.random() * variations.length)];
+}
 import {
   gaForeignGreetingsWeighted,
   gaGreetingsWeighted,
@@ -242,7 +259,10 @@ export function generateGMReply(authorName: string, postText = ""): string {
   const keywordToEcho = detectKeywordToEcho(postText);
   if (keywordToEcho) {
     // Use the keyword from the post instead of author name or weighted selection
-    const reply = `${greeting} ${keywordToEcho}`;
+    // For "degen", add variations for variety
+    const keywordVariation =
+      keywordToEcho === "degen" ? getDegenVariation() : keywordToEcho;
+    const reply = `${greeting} ${keywordVariation}`;
 
     // Still chance to add phrase and emoji
     if (Math.random() < CONFIG.replyChances.includePhrase) {
@@ -375,7 +395,10 @@ export function generateGNReply(authorName: string, postText = ""): string {
   // Check if post contains special keywords to echo back
   const keywordToEcho = detectKeywordToEcho(postText);
   if (keywordToEcho) {
-    const reply = `${greeting} ${keywordToEcho}`;
+    // For "degen", add variations for variety
+    const keywordVariation =
+      keywordToEcho === "degen" ? getDegenVariation() : keywordToEcho;
+    const reply = `${greeting} ${keywordVariation}`;
 
     if (Math.random() < CONFIG.replyChances.includePhrase) {
       let phrase: string;
@@ -503,7 +526,10 @@ export function generateGAReply(authorName: string, postText = ""): string {
   // Check if post contains special keywords to echo back
   const keywordToEcho = detectKeywordToEcho(postText);
   if (keywordToEcho) {
-    const reply = `${greeting} ${keywordToEcho}`;
+    // For "degen", add variations for variety
+    const keywordVariation =
+      keywordToEcho === "degen" ? getDegenVariation() : keywordToEcho;
+    const reply = `${greeting} ${keywordVariation}`;
 
     if (Math.random() < CONFIG.replyChances.includePhrase) {
       let phrase: string;
@@ -631,7 +657,10 @@ export function generateGEReply(authorName: string, postText = ""): string {
   // Check if post contains special keywords to echo back
   const keywordToEcho = detectKeywordToEcho(postText);
   if (keywordToEcho) {
-    const reply = `${greeting} ${keywordToEcho}`;
+    // For "degen", add variations for variety
+    const keywordVariation =
+      keywordToEcho === "degen" ? getDegenVariation() : keywordToEcho;
+    const reply = `${greeting} ${keywordVariation}`;
 
     if (Math.random() < CONFIG.replyChances.includePhrase) {
       let phrase: string;
@@ -761,7 +790,10 @@ export function generateHBDReply(authorName: string, postText = ""): string {
   // Check if post contains special keywords to echo back
   const keywordToEcho = detectKeywordToEcho(postText);
   if (keywordToEcho) {
-    const reply = `${greeting} ${keywordToEcho}`;
+    // For "degen", add variations for variety
+    const keywordVariation =
+      keywordToEcho === "degen" ? getDegenVariation() : keywordToEcho;
+    const reply = `${greeting} ${keywordVariation}`;
 
     if (Math.random() < CONFIG.replyChances.includePhrase) {
       const phrase =

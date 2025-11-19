@@ -1,9 +1,73 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // @ts-expect-error - Bun test types
 import { describe, expect, test } from "bun:test";
-import { detectKeywordToEcho, detectWeekdayInPost } from "../src/reply-helpers";
+import {
+  detectCryptoTradingContent,
+  detectKeywordToEcho,
+  detectWeekdayInPost,
+} from "../src/reply-helpers";
 
 describe("Reply Helpers", () => {
+  describe("detectCryptoTradingContent", () => {
+    test("should detect common crypto coins", () => {
+      expect(detectCryptoTradingContent("gm btc")).toBe(true);
+      expect(detectCryptoTradingContent("good morning ETH")).toBe(true);
+      expect(detectCryptoTradingContent("SOL to the moon")).toBe(true);
+    });
+
+    test("should detect crypto terminology", () => {
+      expect(detectCryptoTradingContent("gm crypto")).toBe(true);
+      expect(detectCryptoTradingContent("buying some tokens")).toBe(true);
+      expect(detectCryptoTradingContent("check out this NFT")).toBe(true);
+      expect(detectCryptoTradingContent("defi is the future")).toBe(true);
+    });
+
+    test("should detect trading terms", () => {
+      expect(detectCryptoTradingContent("pump it")).toBe(true);
+      expect(detectCryptoTradingContent("to the moon")).toBe(true);
+      expect(detectCryptoTradingContent("buy the dip")).toBe(true);
+      expect(detectCryptoTradingContent("diamond hands")).toBe(true);
+      expect(detectCryptoTradingContent("bullish on this")).toBe(true);
+    });
+
+    test("should detect price mentions", () => {
+      expect(detectCryptoTradingContent("coin at $0.001")).toBe(true);
+      expect(detectCryptoTradingContent("up 500%")).toBe(true);
+      expect(detectCryptoTradingContent("gained 100%")).toBe(true);
+      expect(detectCryptoTradingContent("+250% today")).toBe(true);
+    });
+
+    test("should detect ticker symbols", () => {
+      expect(detectCryptoTradingContent("check out $PEPE")).toBe(true);
+      expect(detectCryptoTradingContent("gm $DOGE")).toBe(true);
+      expect(detectCryptoTradingContent("$SHIB to the moon")).toBe(true);
+    });
+
+    test("should detect memecoin references", () => {
+      expect(detectCryptoTradingContent("memecoin season")).toBe(true);
+      expect(detectCryptoTradingContent("shitcoin pump")).toBe(true);
+      expect(detectCryptoTradingContent("meme coin alert")).toBe(true);
+    });
+
+    test("should detect DeFi terms", () => {
+      expect(detectCryptoTradingContent("staking rewards")).toBe(true);
+      expect(detectCryptoTradingContent("liquidity pool")).toBe(true);
+      expect(detectCryptoTradingContent("yield farming")).toBe(true);
+    });
+
+    test("should return false for non-crypto content", () => {
+      expect(detectCryptoTradingContent("gm everyone")).toBe(false);
+      expect(detectCryptoTradingContent("good morning friends")).toBe(false);
+      expect(detectCryptoTradingContent("just saying hello")).toBe(false);
+    });
+
+    test("should be case insensitive", () => {
+      expect(detectCryptoTradingContent("GM BTC")).toBe(true);
+      expect(detectCryptoTradingContent("gm eth")).toBe(true);
+      expect(detectCryptoTradingContent("Crypto is cool")).toBe(true);
+    });
+  });
+
   describe("detectKeywordToEcho", () => {
     test("should detect 'degen' keyword", () => {
       expect(detectKeywordToEcho("gm degen")).toBe("degen");
@@ -35,7 +99,14 @@ describe("Reply Helpers", () => {
       expect(detectKeywordToEcho("GM MF")).toBe("mf");
     });
 
-    test("should prioritize more specific keywords", () => {
+    test("should prioritize crypto/trading content over explicit keywords", () => {
+      // Crypto content should return "degen" even if other keywords present
+      expect(detectKeywordToEcho("gm retards btc")).toBe("degen");
+      expect(detectKeywordToEcho("gm mf check out this coin")).toBe("degen");
+      expect(detectKeywordToEcho("degen crypto")).toBe("degen");
+    });
+
+    test("should prioritize more specific keywords when no crypto content", () => {
       // When both 'retards' and 'retard' could match, should return 'retards'
       expect(detectKeywordToEcho("gm retards")).toBe("retards");
       // When both 'degens' and 'degen' could match, should return 'degens'
@@ -70,6 +141,20 @@ describe("Reply Helpers", () => {
       expect(detectKeywordToEcho("gm degens ☀️🔥")).toBe("degens");
       expect(detectKeywordToEcho("🌅 good morning retards")).toBe("retards");
       expect(detectKeywordToEcho("gm mf 💪")).toBe("mf");
+    });
+
+    test("should detect crypto content and return 'degen'", () => {
+      expect(detectKeywordToEcho("gm btc")).toBe("degen");
+      expect(detectKeywordToEcho("check out this NFT")).toBe("degen");
+      expect(detectKeywordToEcho("pump it to the moon")).toBe("degen");
+      expect(detectKeywordToEcho("buying $PEPE")).toBe("degen");
+      expect(detectKeywordToEcho("up 500% today")).toBe("degen");
+    });
+
+    test("should prioritize crypto detection over explicit degen mentions", () => {
+      // If crypto content is detected, always return "degen"
+      expect(detectKeywordToEcho("degen btc")).toBe("degen");
+      expect(detectKeywordToEcho("degens crypto")).toBe("degen");
     });
   });
 
