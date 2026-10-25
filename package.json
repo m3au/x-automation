@@ -6,8 +6,8 @@
   "main": "dist/like.js",
   "types": "dist/like.d.ts",
   "scripts": {
-    "build": "bun build src/like.ts --outdir dist --minify --target browser --format iife && bun build src/unmute.ts --outdir dist --minify --target browser --format iife",
-    "build:dev": "bun build src/like.ts --outdir dist --target browser --format iife && bun build src/unmute.ts --outdir dist --target browser --format iife",
+    "build": "bun build src/like.ts --outdir dist --minify --target browser --format iife && bun build src/reply.ts --outdir dist --minify --target browser --format iife && bun build src/unmute.ts --outdir dist --minify --target browser --format iife",
+    "build:dev": "bun build src/like.ts --outdir dist --target browser --format iife && bun build src/reply.ts --outdir dist --target browser --format iife && bun build src/unmute.ts --outdir dist --target browser --format iife",
     "minify": "echo 'Minification now handled by bun build --minify'",
     "watch": "chokidar 'src/**/*.ts' -c 'bun run build' --initial",
     "clean": "rm -rf dist",
@@ -21,6 +21,9 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build",
     "like": "bun build src/like.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/like.js && echo '✅ Built and copied like.js to clipboard!'",
+    "like:share": "bun build src/like.ts --outfile dist/like.readable.js --target browser --format iife && prettier dist/like.readable.js --write && cp dist/like.readable.js like-share.js && pbcopy < dist/like.readable.js && echo '✅ Saved to like-share.js and copied to clipboard!'",
+    "reply": "bun build src/reply.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/reply.js && echo '✅ Built and copied reply.js to clipboard!'",
+    "reply:share": "bun build src/reply.ts --outfile dist/reply.readable.js --target browser --format iife && prettier dist/reply.readable.js --write && cp dist/reply.readable.js reply-share.js && pbcopy < dist/reply.readable.js && echo '✅ Saved to reply-share.js and copied to clipboard!'",
     "unmute": "bun build src/unmute.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/unmute.js && echo '✅ Built and copied unmute.js to clipboard!'",
     "unfollow": "bun build src/unfollow-inactive.ts --outdir dist --minify --target browser --format iife && pbcopy < dist/unfollow-inactive.js && echo '✅ Built and copied unfollow-inactive.js to clipboard!'"
   },

@@ -17,22 +17,6 @@ import {
   waitForVisibility,
 } from "./dom-utils";
 import { sleep } from "./utils";
-import {
-  isGAPost as detectGAPost,
-  isGEPost as detectGEPost,
-  isGMPost as detectGMPost,
-  isGNPost as detectGNPost,
-  isHBDPost as detectHBDPost,
-} from "./post-detector";
-import {
-  generateGAReply,
-  generateGEReply,
-  generateGMReply,
-  generateGNReply,
-  generateHBDReply,
-  generateSayItBackReply,
-  hasSayItBack,
-} from "./reply-generators";
 
 (function () {
   "use strict";
@@ -101,27 +85,6 @@ import {
     console.log("⚠️ Loading spinner timeout - proceeding anyway");
   }
 
-  function isGMPost(postText: string): boolean {
-    return detectGMPost(postText, CONFIG.gmPatterns);
-  }
-
-  function isGNPost(postText: string): boolean {
-    return detectGNPost(postText, CONFIG.gnPatterns);
-  }
-
-  function isGAPost(postText: string): boolean {
-    return detectGAPost(postText, CONFIG.gaPatterns);
-  }
-
-  function isGEPost(postText: string): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-    return detectGEPost(postText, CONFIG.gePatterns);
-  }
-
-  function isHBDPost(postText: string): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-    return detectHBDPost(postText, CONFIG.hbdPatterns);
-  }
 
   async function randomDelay(): Promise<void> {
     if (shouldStop) return;
@@ -911,13 +874,6 @@ import {
           continue;
         }
 
-        let isGM = false;
-        let isGN = false;
-        let isGA = false;
-        let isGE = false;
-        let isHBD = false;
-        let postText = ""; // Store post text for reply generation
-
         if (post && post.tagName.toLowerCase() === "article") {
           const rect = post.getBoundingClientRect();
           const targetY = window.scrollY + rect.top - window.innerHeight / 2;
@@ -926,28 +882,6 @@ import {
           const hasVideo = !!post.querySelector("video");
           const hasImage =
             !hasVideo && !!post.querySelector('[data-testid="tweetPhoto"]');
-
-          // Check if this is a GM/GA/GN/GE/HBD post (but not a reply)
-          postText =
-            post.querySelector('[data-testid="tweetText"]')?.textContent || "";
-          if (!isReplyPost(post)) {
-            if (isHBDPost(postText)) {
-              console.log("🎂 This is a HBD post");
-              isHBD = true;
-            } else if (isGMPost(postText)) {
-              console.log("☀️ This is a GM post");
-              isGM = true;
-            } else if (isGAPost(postText)) {
-              console.log("🌤️ This is a GA post");
-              isGA = true;
-            } else if (isGEPost(postText)) {
-              console.log("🌆 This is a GE post");
-              isGE = true;
-            } else if (isGNPost(postText)) {
-              console.log("🌙 This is a GN post");
-              isGN = true;
-            }
-          }
 
           await humanLikeScroll(targetY, { shouldOvershoot: false });
           await sleep(
@@ -958,10 +892,8 @@ import {
           // Wait for loading spinner if present
           await waitForLoadingToComplete();
 
-          // Add extra viewing time for visual content (skip for GM/GN/GA/GE/HBD posts - we'll reply instead)
-          if (isGM || isGN || isGA || isGE || isHBD) {
-            console.log("⚡ Special post - skipping media wait time");
-          } else if (hasVideo) {
+          // Add extra viewing time for visual content
+          if (hasVideo) {
             const videoElement = post.querySelector(
               "video"
             ) as HTMLVideoElement;
@@ -1005,14 +937,12 @@ import {
           }
         }
 
-        // Skip "thinking" delay for GM/GN/GA/GE/HBD posts since we're replying
-        if (!(isGM || isGN || isGA || isGE || isHBD)) {
-          await sleep(
-            CONFIG.beforeClick.min +
-              Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min),
-            () => shouldStop
-          );
-        }
+        // Small delay before clicking like
+        await sleep(
+          CONFIG.beforeClick.min +
+            Math.random() * (CONFIG.beforeClick.max - CONFIG.beforeClick.min),
+          () => shouldStop
+        );
 
         // Get author display name and username handle
         let authorName = "Unknown";
@@ -1067,206 +997,6 @@ import {
         );
         // Wait for loading spinner if present
         await waitForLoadingToComplete();
-
-        // If it's a GM/GN/GA/GE/HBD post, click reply and compose response
-        // IMPORTANT: Double-check that this is NOT a reply to another post
-        if (
-          (isGM || isGN || isGA || isGE || isHBD) &&
-          post &&
-          post.tagName.toLowerCase() === "article" &&
-          !isReplyPost(post) // Safety check: never reply to replies
-        ) {
-          let postType: string;
-          if (isHBD) {
-            postType = "HBD";
-          } else if (isGM) {
-            postType = "GM";
-          } else if (isGN) {
-            postType = "GN";
-          } else if (isGE) {
-            postType = "GE";
-          } else {
-            postType = "GA";
-          }
-          console.log(`🔍 Looking for reply button in ${postType} post...`);
-          const replyButton = post.querySelector(
-            '[data-testid="reply"]'
-          ) as HTMLElement;
-          console.log(`🔍 Reply button found: ${!!replyButton}`);
-
-          // Check if replies are disabled
-          if (replyButton) {
-            const svg = replyButton.querySelector("svg");
-            if (svg && svg.classList.contains("r-12c3ph5")) {
-              console.log(
-                `⚠️ Replies disabled on this ${postType} post - skipping reply`
-              );
-            } else {
-              await sleep(
-                CONFIG.replyDelays.beforeReplyClick.min +
-                  Math.random() *
-                    (CONFIG.replyDelays.beforeReplyClick.max -
-                      CONFIG.replyDelays.beforeReplyClick.min),
-                () => shouldStop
-              );
-              if (shouldStop) return;
-
-              console.log(`💬 Opening ${postType} post reply box...`);
-              replyButton.click();
-              console.log("💬 Reply button clicked");
-              await sleep(
-                CONFIG.replyDelays.waitForReplyBox.min +
-                  Math.random() *
-                    (CONFIG.replyDelays.waitForReplyBox.max -
-                      CONFIG.replyDelays.waitForReplyBox.min),
-                () => shouldStop
-              ); // Wait for reply box to open
-              if (shouldStop) return;
-
-              // Generate appropriate reply
-              let reply: string;
-
-              // Check for "say it back" prompt
-              if (hasSayItBack(postText)) {
-                reply = generateSayItBackReply(postText);
-                console.log(`💬 Generated "Say it back" reply: "${reply}"`);
-              } else if (isHBD) {
-                reply = generateHBDReply(authorName, postText);
-                console.log(`💬 Generated HBD reply: "${reply}"`);
-              } else if (isGM) {
-                reply = generateGMReply(authorName, postText);
-                console.log(`💬 Generated GM reply: "${reply}"`);
-              } else if (isGN) {
-                reply = generateGNReply(authorName, postText);
-                console.log(`💬 Generated GN reply: "${reply}"`);
-              } else if (isGE) {
-                reply = generateGEReply(authorName, postText);
-                console.log(`💬 Generated GE reply: "${reply}"`);
-              } else {
-                reply = generateGAReply(authorName, postText);
-                console.log(`💬 Generated GA reply: "${reply}"`);
-              }
-
-              // Find the Draft.js contenteditable div
-              const replyBox = document.querySelector(
-                '[data-testid="tweetTextarea_0"]'
-              ) as HTMLElement;
-              if (replyBox) {
-                // Type the reply using Draft.js method
-                const draftEditor = replyBox.closest('[role="textbox"]');
-                if (draftEditor) {
-                  // Set focus
-                  (draftEditor as HTMLElement).focus();
-                  await sleep(
-                    CONFIG.replyDelays.afterFocus.min +
-                      Math.random() *
-                        (CONFIG.replyDelays.afterFocus.max -
-                          CONFIG.replyDelays.afterFocus.min),
-                    () => shouldStop
-                  );
-
-                  // Type character by character for human-like behavior
-                  for (const char of reply) {
-                    document.execCommand("insertText", false, char);
-                    await sleep(
-                      CONFIG.replyDelays.perCharacter.min +
-                        Math.random() *
-                          (CONFIG.replyDelays.perCharacter.max -
-                            CONFIG.replyDelays.perCharacter.min),
-                      () => shouldStop
-                    );
-                    if (shouldStop) return;
-                  }
-
-                  console.log(
-                    `💬 ${postType} reply typed, clicking send button...`
-                  );
-                  await sleep(
-                    CONFIG.replyDelays.beforeSend.min +
-                      Math.random() *
-                        (CONFIG.replyDelays.beforeSend.max -
-                          CONFIG.replyDelays.beforeSend.min),
-                    () => shouldStop
-                  );
-
-                  // Find and click the Reply button
-                  const tweetButton = document.querySelector(
-                    '[data-testid="tweetButton"]'
-                  ) as HTMLElement;
-                  if (tweetButton) {
-                    tweetButton.click();
-                    console.log(`💬 ${postType} reply sent!`);
-                    await sleep(
-                      CONFIG.replyDelays.waitForModalClose.min +
-                        Math.random() *
-                          (CONFIG.replyDelays.waitForModalClose.max -
-                            CONFIG.replyDelays.waitForModalClose.min),
-                      () => shouldStop
-                    ); // Wait for modal to auto-close
-                    console.log(
-                      "💬 Modal auto-closed, continuing to next post"
-                    );
-                  } else {
-                    console.log(
-                      "⚠️ Could not find tweet button - closing manually"
-                    );
-                    document.dispatchEvent(
-                      new KeyboardEvent("keydown", {
-                        key: "Escape",
-                        code: "Escape",
-                        keyCode: 27,
-                        bubbles: true,
-                      })
-                    );
-                    await sleep(
-                      CONFIG.replyDelays.escapeKeyFallback.min +
-                        Math.random() *
-                          (CONFIG.replyDelays.escapeKeyFallback.max -
-                            CONFIG.replyDelays.escapeKeyFallback.min),
-                      () => shouldStop
-                    );
-                  }
-                } else {
-                  console.log(
-                    `⚠️ Could not find Draft.js editor for ${postType} - closing modal`
-                  );
-                  document.dispatchEvent(
-                    new KeyboardEvent("keydown", {
-                      key: "Escape",
-                      code: "Escape",
-                      keyCode: 27,
-                      bubbles: true,
-                    })
-                  );
-                  await sleep(
-                    CONFIG.replyDelays.escapeKeyFallback.min +
-                      Math.random() *
-                        (CONFIG.replyDelays.escapeKeyFallback.max -
-                          CONFIG.replyDelays.escapeKeyFallback.min)
-                  );
-                }
-              } else {
-                console.log(
-                  `⚠️ Could not find reply box for ${postType} - closing modal`
-                );
-                document.dispatchEvent(
-                  new KeyboardEvent("keydown", {
-                    key: "Escape",
-                    code: "Escape",
-                    keyCode: 27,
-                    bubbles: true,
-                  })
-                );
-                await sleep(
-                  CONFIG.replyDelays.escapeKeyFallback.min +
-                    Math.random() *
-                      (CONFIG.replyDelays.escapeKeyFallback.max -
-                        CONFIG.replyDelays.escapeKeyFallback.min)
-                );
-              }
-            }
-          }
-        }
 
         // Dive into comments and like some replies (for all posts)
         // Note: Comment likes do NOT count toward processedCount/limit - only main posts do

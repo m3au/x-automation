@@ -293,7 +293,7 @@ export function isDocumentVisible(): boolean {
   return !document.hidden;
 }
 
-export async function waitForVisibility(maxWaitTime: number): Promise<boolean> {
+export async function waitForVisibility(maxWaitTime = 900000): Promise<boolean> {
   console.log("Page not active. Waiting for visibility...");
 
   if (isDocumentVisible()) {

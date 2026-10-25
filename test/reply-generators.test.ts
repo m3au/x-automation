@@ -177,54 +177,77 @@ describe("Reply Generators", () => {
   });
 
   describe("generateSayItBackReply", () => {
-    test("should return 'it back' with laugh emoji ~50% of the time", () => {
-      // Run multiple times to check both branches hit
-      const results = new Set<boolean>();
+    test("should return 'it back' ~20% of the time", () => {
+      // Run multiple times to check that "it back" is returned sometimes
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("gm say it back");
+        results.push(reply);
+      }
+      // Should have at least some "it back" replies (20% chance)
+      const itBackCount = results.filter((r) => r === "it back").length;
+      expect(itBackCount).toBeGreaterThan(0);
+      // But not all should be "it back" (80% should be greetings)
+      expect(itBackCount).toBeLessThan(100);
+    });
+
+    test("should return simple greeting for GM posts", () => {
+      // Run multiple times - most should return "gm" (80% chance)
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("gm say it back");
+        results.push(reply);
+      }
+      // Most should be "gm" (some might be "it back" due to 20% chance)
+      const gmCount = results.filter((r) => r === "gm").length;
+      expect(gmCount).toBeGreaterThan(50); // At least 50% should be "gm"
+    });
+
+    test("should return simple greeting for GN posts", () => {
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("gn say it back");
+        results.push(reply);
+      }
+      const gnCount = results.filter((r) => r === "gn").length;
+      expect(gnCount).toBeGreaterThan(50);
+    });
+
+    test("should return simple greeting for GA posts", () => {
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("ga say it back");
+        results.push(reply);
+      }
+      const gaCount = results.filter((r) => r === "ga").length;
+      expect(gaCount).toBeGreaterThan(50);
+    });
+
+    test("should return simple greeting for GE posts", () => {
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("ge say it back");
+        results.push(reply);
+      }
+      const geCount = results.filter((r) => r === "ge").length;
+      expect(geCount).toBeGreaterThan(50);
+    });
+
+    test("should return simple greeting for HBD posts", () => {
+      const results: string[] = [];
+      for (let i = 0; i < 100; i++) {
+        const reply = generateSayItBackReply("hbd say it back");
+        results.push(reply);
+      }
+      const hbdCount = results.filter((r) => r === "hbd").length;
+      expect(hbdCount).toBeGreaterThan(50);
+    });
+
+    test("should return only simple greetings or 'it back'", () => {
+      const validReplies = ["gm", "gn", "ga", "ge", "hbd", "it back"];
       for (let i = 0; i < 50; i++) {
         const reply = generateSayItBackReply("gm say it back");
-        // Should either be "it back [emoji]" or start with handshake
-        results.add(reply.startsWith("it back"));
-        results.add(reply.startsWith("🤝"));
-      }
-      // Both should have been hit at least once
-      expect(results.has(true)).toBe(true);
-    });
-
-    test("should include handshake when echoing greeting", () => {
-      // Test the echo branch (not deterministic, but test the structure)
-      const results: string[] = [];
-      for (let i = 0; i < 30; i++) {
-        const reply = generateSayItBackReply("GM ☀️ say it back");
-        results.push(reply);
-      }
-      // At least some should have handshake (echoing the greeting)
-      const hasHandshake = results.some((r) => r.includes("🤝"));
-      expect(hasHandshake).toBe(true);
-    });
-
-    test("should always include laugh emoji", () => {
-      for (let i = 0; i < 20; i++) {
-        const reply = generateSayItBackReply("gm say it back");
-        // Should end with one of the laugh emojis
-        const laughEmojis = ["😂", "🤣", "😭", "💀", "😹", "😆", "😅"];
-        const hasLaughEmoji = laughEmojis.some((emoji) =>
-          reply.includes(emoji)
-        );
-        expect(hasLaughEmoji).toBe(true);
-      }
-    });
-
-    test("should clean up 'say it back' phrases", () => {
-      const results: string[] = [];
-      for (let i = 0; i < 30; i++) {
-        const reply = generateSayItBackReply("GM ☀️ say it back");
-        results.push(reply);
-      }
-      // When echoing, should not include "say it back" in the reply
-      const echoes = results.filter((r) => r.includes("🤝"));
-      for (const echo of echoes) {
-        expect(echo.toLowerCase()).not.toContain("say it back");
-        expect(echo.toLowerCase()).not.toContain("say back");
+        expect(validReplies).toContain(reply);
       }
     });
   });

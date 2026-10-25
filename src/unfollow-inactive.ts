@@ -34,30 +34,42 @@ const UNFOLLOW_CONFIG = {
   unfollowUnverified: false,
 
   // Unfollow users who follow X times more people than follow them (e.g., 10 means 10x more following than followers)
-  unfollowHighFollowingRatio: true,
+  unfollowHighFollowingRatio: false,
   followingToFollowersRatio: 10, // Unfollow if following >= (followers * this ratio)
 
   // Unfollow users who only repost (no original posts in first N posts)
-  unfollowRepostOnly: true,
+  unfollowRepostOnly: false,
   repostCheckCount: 5, // Check first N posts
 
   // Unfollow users with suspicious username patterns (bots/spam)
-  unfollowSuspiciousUsername: true,
+  unfollowSuspiciousUsername: false,
+
+  // Unfollow users who haven't posted in X months
+  unfollowInactive: true,
+  inactiveMonths: 3, // Unfollow if no posts in this many months
 
   // Start processing from top (true) or bottom (false)
   // If true: scrolls DOWN from top
   // If false: scrolls UP from bottom
-  startFromTop: true,
+  startFromTop: false,
+
+  // Skip initial scroll to end (set to true if you're already at the bottom of the list)
+  alreadyAtEnd: false,
 
   // Unfollow users who don't follow back (check directly from list, no profile needed)
-  unfollowNotFollowingBack: true,
+  unfollowNotFollowingBack: false,
+
+  // Whitelist of usernames to never unfollow (without @ symbol)
+  whitelist: ["jack", "cowsay", "vxunderground"],
 };
 
 // Script state
 let shouldStop = false;
 let unfollowedCount = 0;
 const MAX_UNFOLLOWS_PER_DAY = 10;
-const INACTIVITY_THRESHOLD_MS = 60 * 24 * 60 * 60 * 1000; // 60 days (2 months)
+// Inactivity threshold calculated from config
+const INACTIVITY_THRESHOLD_MS =
+  UNFOLLOW_CONFIG.inactiveMonths * 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Get shouldStop function for passing to utilities
@@ -105,10 +117,7 @@ async function shouldUnfollowUser(username: string): Promise<{
   reason: string;
 }> {
   // Determine if we should skip inactivity check (to avoid unnecessary post checking)
-  // Note: repost check also checks posts, but it's a different check so we don't skip inactivity for it
-  const skipInactivityCheck =
-    UNFOLLOW_CONFIG.unfollowHighFollowingRatio ||
-    UNFOLLOW_CONFIG.unfollowUnverified;
+  const skipInactivityCheck = !UNFOLLOW_CONFIG.unfollowInactive;
 
   // Check following/followers ratio FIRST (even if user is active)
   let followerCount = 0;
@@ -186,15 +195,13 @@ async function shouldUnfollowUser(username: string): Promise<{
     }
   }
 
-  // Only check inactivity if ratio/verification checks are not enabled
-  // (to avoid unnecessary post checking)
+  // Check inactivity if enabled
   if (!skipInactivityCheck) {
-    // Check inactivity LAST (only if other checks are disabled)
     const inactive = await isUserInactive();
     if (inactive) {
       return {
         shouldUnfollow: true,
-        reason: "inactive (no posts or last post > 2 months)",
+        reason: `inactive (no posts or last post > ${UNFOLLOW_CONFIG.inactiveMonths} months)`,
       };
     }
   }
@@ -303,7 +310,7 @@ async function main(): Promise<void> {
   console.log("🚀 Starting Unfollow Inactive Users Script");
   console.log(`📊 Max unfollows per day: ${MAX_UNFOLLOWS_PER_DAY}`);
   console.log(
-    `⏰ Inactivity threshold: ${INACTIVITY_THRESHOLD_MS / (24 * 60 * 60 * 1000)} days`
+    `⏰ Unfollow inactive: ${UNFOLLOW_CONFIG.unfollowInactive ? `✅ Enabled (${UNFOLLOW_CONFIG.inactiveMonths} months)` : "❌ Disabled"}`
   );
   console.log(
     `🔐 Unfollow unverified: ${UNFOLLOW_CONFIG.unfollowUnverified ? "✅ Enabled" : "❌ Disabled"}`
@@ -318,10 +325,16 @@ async function main(): Promise<void> {
     `👤 Unfollow suspicious usernames: ${UNFOLLOW_CONFIG.unfollowSuspiciousUsername ? "✅ Enabled" : "❌ Disabled"}`
   );
   console.log(
+    `👥 Unfollow not following back: ${UNFOLLOW_CONFIG.unfollowNotFollowingBack ? "✅ Enabled" : "❌ Disabled"}`
+  );
+  console.log(
     `📜 Start position: ${UNFOLLOW_CONFIG.startFromTop ? "⬇️ Top (scrolling down)" : "⬆️ Bottom (scrolling up)"}`
   );
   console.log(
-    `👥 Unfollow not following back: ${UNFOLLOW_CONFIG.unfollowNotFollowingBack ? "✅ Enabled" : "❌ Disabled"}`
+    `⏭️ Already at end: ${UNFOLLOW_CONFIG.alreadyAtEnd ? "✅ Yes (skipping scroll)" : "❌ No (will scroll)"}`
+  );
+  console.log(
+    `🛡️ Whitelist: ${UNFOLLOW_CONFIG.whitelist.length > 0 ? UNFOLLOW_CONFIG.whitelist.map((u) => `@${u}`).join(", ") : "None"}`
   );
 
   let totalUsers: number;
@@ -338,14 +351,19 @@ async function main(): Promise<void> {
     totalUsers = Number.MAX_SAFE_INTEGER; // Process until no more users found
   } else {
     // Start from bottom: scroll to end first to load all users and get count
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-    totalUsers = await scrollToEndOfList(() => shouldStop);
-    // Scroll to bottom to start processing
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: "smooth",
-    });
-    await sleepRange(1000, 1500, getShouldStop);
+    if (UNFOLLOW_CONFIG.alreadyAtEnd) {
+      console.log("⏭️ Skipping scroll, already at end of list...");
+      totalUsers = Number.MAX_SAFE_INTEGER; // Process until no more users found
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+      totalUsers = await scrollToEndOfList(() => shouldStop);
+      // Scroll to bottom to start processing
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth",
+      });
+      await sleepRange(1000, 1500, getShouldStop);
+    }
     userCells = getAllUserCells();
   }
 
@@ -415,17 +433,39 @@ async function main(): Promise<void> {
       cell.scrollIntoView({ behavior: "smooth", block: "center" });
       await sleepRange(500, 800, getShouldStop);
     } else {
-      // Process from bottom: calculate position and scroll up
-      const position = totalUsers - index - 1;
-      const scrollPosition =
-        document.documentElement.scrollHeight - position * 80;
-      window.scrollTo({
-        top: Math.max(0, scrollPosition),
-        behavior: "smooth",
+      // Process from bottom: find last unprocessed user and scroll up
+      cell = [...userCells].reverse().find((c: Element) => {
+        const info = extractUserInfo(c);
+        return info && !processedUsernames.has(info.username);
       });
-      await sleepRange(1000, 1500, getShouldStop);
-      userCells = getAllUserCells();
-      cell = userCells.at(-1);
+
+      if (!cell) {
+        // No unprocessed users found, try scrolling up to load more
+        const scrollTopBefore = window.scrollY;
+        window.scrollBy({ top: -500, behavior: "smooth" });
+        await sleepRange(1000, 1500, getShouldStop);
+        userCells = getAllUserCells();
+        cell = [...userCells].reverse().find((c: Element) => {
+          const info = extractUserInfo(c);
+          return info && !processedUsernames.has(info.username);
+        });
+
+        // If still no cell and we can't scroll up anymore, we're done
+        if (!cell && window.scrollY >= scrollTopBefore) {
+          console.log(
+            "✅ Reached top of list (no more unprocessed users found)"
+          );
+          break;
+        }
+
+        if (!cell) {
+          console.log(`⚠️ Could not find unprocessed cell, skipping...`);
+          continue;
+        }
+      }
+      // Scroll the cell into view
+      cell.scrollIntoView({ behavior: "smooth", block: "center" });
+      await sleepRange(500, 800, getShouldStop);
     }
 
     if (!cell) {
@@ -452,6 +492,12 @@ async function main(): Promise<void> {
 
     // Mark as processed
     processedUsernames.add(userInfo.username);
+
+    // Check whitelist
+    if (UNFOLLOW_CONFIG.whitelist.includes(userInfo.username)) {
+      console.log(`\n🛡️ Skipping whitelisted user @${userInfo.username}`);
+      continue;
+    }
 
     console.log(
       `\n👤 Checking @${userInfo.username} (${userInfo.displayName})`

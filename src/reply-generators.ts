@@ -53,6 +53,13 @@ import {
 import { CONFIG } from "./config";
 import { selectWeighted } from "./utils";
 import { introduceTypo } from "./typo-generator";
+import {
+  isGMPost,
+  isGNPost,
+  isGAPost,
+  isGEPost,
+  isHBDPost,
+} from "./post-detector";
 
 // Check if post has "say it back" prompt
 export function hasSayItBack(postText: string): boolean {
@@ -67,41 +74,26 @@ export function hasSayItBack(postText: string): boolean {
 
 // Generate "say it back" response
 export function generateSayItBackReply(postText: string): string {
-  let reply: string;
-  let addHandshake = false;
-
-  // 50% chance to be literal
-  if (Math.random() < 0.5) {
-    reply = "it back";
-  } else {
-    // Otherwise, extract and echo the greeting part
-    // Remove "say it back" and similar phrases, keep the greeting
-    const cleaned = postText
-      .replaceAll(/say it back/gi, "")
-      .replaceAll(/say back/gi, "")
-      .replaceAll(/reply back/gi, "")
-      .replaceAll(/type it back/gi, "")
-      .trim();
-
-    // If there's something left, return it with handshake, otherwise be literal
-    if (cleaned.length > 0) {
-      reply = cleaned;
-      addHandshake = true;
-    } else {
-      reply = "it back";
-    }
+  // 20% chance to just say "it back" without anything else
+  if (Math.random() < 0.2) {
+    return "it back";
   }
 
-  // Add handshake emoji at the start when echoing back
-  if (addHandshake) {
-    reply = `🤝 ${reply}`;
+  // Otherwise, detect the post type and return the simple greeting
+  if (isHBDPost(postText, CONFIG.hbdPatterns)) {
+    return "hbd";
+  } else if (isGMPost(postText, CONFIG.gmPatterns)) {
+    return "gm";
+  } else if (isGAPost(postText, CONFIG.gaPatterns)) {
+    return "ga";
+  } else if (isGEPost(postText, CONFIG.gePatterns)) {
+    return "ge";
+  } else if (isGNPost(postText, CONFIG.gnPatterns)) {
+    return "gn";
   }
 
-  // Add a laugh emoji at the end
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-  const laughEmoji =
-    CONFIG.laughEmojis[Math.floor(Math.random() * CONFIG.laughEmojis.length)];
-  return `${reply} ${laughEmoji}`;
+  // Fallback: just return "it back" if we can't detect the type
+  return "it back";
 }
 
 // Normalize author names (remove fancy Unicode, emojis, etc.)
@@ -134,6 +126,9 @@ export function normalizeAuthorName(name: string): string {
   if (normalized.includes(".")) {
     normalized = normalized.split(".")[0].trim();
   }
+
+  // Replace underscores with spaces (e.g., "something_something" → "something something")
+  normalized = normalized.replaceAll("_", " ");
 
   // Handle spaced-out names like "H O L Y" → "HOLY"
   // Only collapse if ALL words are single characters (not "John Smith")

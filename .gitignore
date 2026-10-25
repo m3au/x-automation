@@ -9,6 +9,8 @@ bun.lockb
 # Build output
 dist/
 build/
+reply-share.js
+like-share.js
 *.tsbuildinfo
 
 # Logs

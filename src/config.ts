@@ -82,15 +82,15 @@ export const CONFIG = {
   ],
 
   nameSuffixesWeighted: [
-    { text: "", weight: 75 }, // No suffix (most common)
-    { text: " legend", weight: 8 },
-    { text: "-chan", weight: 4 },
-    { text: "-san", weight: 4 },
+    { text: "", weight: 82 }, // No suffix (most common)
+    { text: " legend", weight: 6 },
+    { text: "-chan", weight: 2 },
+    { text: "-san", weight: 2 },
     { text: "-sama", weight: 2 },
     { text: "-senpai", weight: 2 },
     { text: "-tan", weight: 1 },
     { text: "-dono", weight: 1 },
-    { text: "-nyan", weight: 3 },
+    { text: "-nyan", weight: 2 },
   ],
 
   // Reply typing/interaction delays0
